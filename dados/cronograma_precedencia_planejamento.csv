@@ -1,0 +1,11 @@
+﻿id,atividade,inicio_semana,duracao_semanas,termino_semana,precedencia,recursos,custo_reais
+A1,Requisitos e pesquisa primária,1,2,2,—,Equipe (2),2500
+A2,Funções e matriz morfológica,3,1,3,A1,Equipe (2),1500
+A3,"CAD, arquitetura e tolerâncias",4,2,5,A2,Projeto (2),5000
+A4,Cotação e compra de chapa,3,2,4,A1,Compras (1),18000
+A5,Protótipos usinados,6,2,7,A3; A4,Fornecedor,6000
+A6,Testes e otimização,8,2,9,A5,Equipe (2),4500
+A7,"Processo, embalagem e inspeção",10,2,11,A6,Produção (2),7000
+A8,Preparação do lote comercial,12,2,13,A7,Produção (2),8000
+A9,Lançamento piloto e acompanhamento,14,2,15,A8,Marketing (1),1500
+A10,Encerramento e lições aprendidas,16,1,16,A9,Equipe (2),0

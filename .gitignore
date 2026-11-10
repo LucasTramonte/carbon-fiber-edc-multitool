@@ -1,0 +1,31 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.venv/
+
+# Local and restricted academic materials
+docs_referencia/
+ER801A - Desenvolvimento de Produtos/
+relatorio_lucas/
+*.docx
+*.pdf
+archivo.csv
+prometal_app_logo.png
+.vscode/
+AGENTS.MD
+
+# Raw or diagnostic exports
+dados/mercado_livre_diagnostico.*
+dados/levantamento_manual_concorrentes*.csv
+dados/template_cotacoes.csv
+dados/*.md
+dados/figuras/
+
+# Scripts requiring private marketplace credentials or producing restricted reports
+src/diagnostico_mercadolivre.py
+src/extrair_mercadolivre.py
+src/oauth_mercadolivre.py
+src/gerar_manual_coleta_pdf.py
+src/gerar_relatorio_docx.py

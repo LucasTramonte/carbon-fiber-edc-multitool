@@ -1,0 +1,9 @@
+requisito,metodo_de_ensaio,amostras,criterio_de_aceitacao,registro_obrigatorio,responsavel,status
+Dimensoes CR80,Medicao com instrumento calibrado,5,85.60 x 53.98 mm e espessura <= 2 mm,Instrumento; data; resultados,,Planejado
+Chave de fenda,Ensaio com parafusos e torque especificados,5,Sem escorregamento ou fratura no torque definido,Parafuso; torque; ciclos; falhas,,Planejado
+Abridor de garrafa,Ensaio repetido com garrafas padronizadas,5,Sem deformacao perigosa no numero de ciclos definido,Numero de ciclos; força; falhas,,Planejado
+Abridor de latas,Ensaio supervisionado em latas padronizadas,5,Sem aresta perigosa ou falha fora do modo especificado,Tipo de lata; ciclos; lesoes; falhas,,Planejado
+Chave de boca,Ensaio com porca e torque especificados,5,Sem escorregamento ou fratura no torque definido,Dimensao; torque; ciclos; falhas,,Planejado
+Chanfro rombo,Abertura de embalagens com produto interno protegido,5,Abre a fita sem contato com o conteudo,Tipo de embalagem; danos; falhas,,Planejado
+Modo de falha seguro,Ensaio progressivo acima do limite de projeto,5,Fratura observada conforme modo documentado e sem projecao perigosa,Forca; deslocamento; fotos; fratura,,Planejado
+Condutividade e cartao,Medicao eletrica e teste com cartoes reais,5,Resultado documentado; nenhuma alegacao sem criterio aprovado,Instrumento; cartao; condicoes,,Planejado

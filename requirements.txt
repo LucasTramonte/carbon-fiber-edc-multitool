@@ -1,0 +1,7 @@
+requests>=2.31,<3
+pandas
+numpy
+matplotlib
+seaborn
+scipy
+python-docx>=1.2,<2
