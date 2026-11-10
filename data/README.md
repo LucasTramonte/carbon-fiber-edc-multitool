@@ -24,4 +24,5 @@ SIDRA field names and are retained for traceability.
   not belong in this directory.
 
 Derived tables and charts are written to `outputs/`, not mixed with source
-inputs.
+inputs. Historical or intermediate exports that are not required to reproduce
+the public pipeline are excluded rather than kept as ambiguous duplicates.

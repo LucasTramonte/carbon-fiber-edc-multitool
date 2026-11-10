@@ -1,4 +1,15 @@
-# Carbon Fiber EDC Multitool
+<div align="center">
+  <img src="assets/brand/product-mark.png" alt="Carbon Fiber EDC Multitool product mark" width="220">
+  <h1>Carbon Fiber EDC Multitool</h1>
+  <p>Evidence-led product development for everyday carry and urban cycling.</p>
+</div>
+
+<div align="center">
+
+[![CI](https://github.com/LucasTramonte/carbon-fiber-edc-multitool/actions/workflows/ci.yml/badge.svg)](https://github.com/LucasTramonte/carbon-fiber-edc-multitool/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/LucasTramonte/carbon-fiber-edc-multitool/actions/workflows/codeql.yml/badge.svg)](https://github.com/LucasTramonte/carbon-fiber-edc-multitool/actions/workflows/codeql.yml)
+
+</div>
 
 Reproducible product-development study for a compact carbon-fiber card
 multitool intended for everyday carry (EDC) and urban cycling.
@@ -26,6 +37,7 @@ assumptions require prototype testing, quotations, and primary research.
 
 ```text
 .
+├── assets/brand/               # Public visual identity assets
 ├── data/                       # Public inputs and raw API extracts
 │   ├── README.md               # Provenance and data contracts
 │   ├── ibge_state_*.json      # Raw SIDRA responses
@@ -41,6 +53,23 @@ assumptions require prototype testing, quotations, and primary research.
 ├── requirements.txt
 └── .env.example
 ```
+
+The product mark is included as a visual identity asset and is displayed at
+the top of this document. It is kept separate from analysis outputs and data.
+
+## Engineering automation
+
+The repository includes:
+
+- CI on every push and pull request across supported Python versions;
+- CodeQL static analysis for Python;
+- dependency review on pull requests;
+- Dependabot updates for Python packages and GitHub Actions;
+- a pull-request checklist covering provenance, privacy, tests, and outputs;
+- `CODEOWNERS` and a security policy for maintainership.
+
+These workflows are intentionally restricted to read-only repository access
+unless a security-analysis permission is required by CodeQL.
 
 Academic handouts, copyrighted reference documents, editable reports,
 credentials, personal data, and private marketplace exports are intentionally

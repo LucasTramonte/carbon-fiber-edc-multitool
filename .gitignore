@@ -35,6 +35,9 @@ data/figures/**
 data/figuras/**
 outputs/raw/
 
+# Local generated caches
+.pytest_cache/
+
 # Scripts requiring private marketplace credentials or producing restricted reports
 src/marketplace_diagnostic.py
 src/fetch_marketplace.py
