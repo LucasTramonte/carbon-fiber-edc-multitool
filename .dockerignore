@@ -2,7 +2,7 @@
 .venv
 __pycache__
 *.pyc
-relatorio_lucas
+outputs
 docs_referencia
 ER801A - Desenvolvimento de Produtos
 *.docx

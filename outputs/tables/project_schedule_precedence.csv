@@ -1,0 +1,11 @@
+id,activity,start_week,duration_weeks,end_week,predecessors,resources,cost_brl
+A1,Requirements and primary research,1,2,2,—,Team (2),2500
+A2,Functions and morphological matrix,3,1,3,A1,Team (2),1500
+A3,"CAD, architecture, and tolerances",4,2,5,A2,Design (2),5000
+A4,Sheet quotation and procurement,3,2,4,A1,Purchasing (1),18000
+A5,Machined prototypes,6,2,7,A3; A4,Supplier,6000
+A6,Testing and optimization,8,2,9,A5,Team (2),4500
+A7,"Process, packaging, and inspection",10,2,11,A6,Production (2),7000
+A8,Commercial batch preparation,12,2,13,A7,Production (2),8000
+A9,Pilot launch and monitoring,14,2,15,A8,Marketing (1),1500
+A10,Closeout and lessons learned,16,1,16,A9,Team (2),0

@@ -16,14 +16,31 @@ prometal_app_logo.png
 .vscode/
 AGENTS.MD
 
-# Raw or diagnostic exports
-dados/mercado_livre_diagnostico.*
-dados/levantamento_manual_concorrentes*.csv
-dados/template_cotacoes.csv
-dados/*.md
-dados/figuras/
+# Raw, private, or diagnostic exports
+data/marketplace_diagnostic.*
+data/manual_competitor_observations*.csv
+data/quotations_template.csv
+data/mercado_livre_diagnostico.*
+data/levantamento_manual_concorrentes*.csv
+data/template_cotacoes.csv
+data/research_sources.md
+data/manual_collection_guide.md
+data/methodology_notes.md
+data/fontes_pesquisa.md
+data/guia_coleta_manual.md
+data/metodologia_analise.md
+data/figures/
+data/figuras/
+data/figures/**
+data/figuras/**
+outputs/raw/
 
 # Scripts requiring private marketplace credentials or producing restricted reports
+src/marketplace_diagnostic.py
+src/fetch_marketplace.py
+src/marketplace_oauth.py
+src/generate_collection_manual.py
+src/generate_academic_report.py
 src/diagnostico_mercadolivre.py
 src/extrair_mercadolivre.py
 src/oauth_mercadolivre.py
