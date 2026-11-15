@@ -1,0 +1,29 @@
+flowchart TD
+    inicio(["Card returned<br/>to the seller"])
+    why{"Reason<br/>for return?"}
+    subgraph lane1["Withdrawal"]
+        direction TB
+        r1["Re-inspection<br/>(unused card)"]
+        r2[("Stock")]
+    end
+    subgraph lane2["Defect"]
+        direction TB
+        d1["Failure analysis<br/>tied to engraved lot"]
+        d2["Process and<br/>inspection fix"]
+    end
+    subgraph lane3["End of life"]
+        direction TB
+        e1["Reverse logistics<br/>(next diagram)"]
+    end
+    inicio --> why
+    why -->|"withdrawal<br/>(within 7 days,<br/>CDC art. 49)"| r1
+    why -->|"defect<br/>(warranty,<br/>CDC art. 26)"| d1
+    why -->|"end of life<br/>(voluntary)"| e1
+    r1 -->|"intact"| r2
+    d1 -->|"root cause"| d2
+    classDef hot fill:#ef6c00,stroke:#263238,color:#fff;
+    class e1 hot;
+    classDef term fill:#263238,stroke:#263238,color:#fff;
+    class inicio term;
+    classDef stock fill:#eceff1,stroke:#263238;
+    class r2 stock;

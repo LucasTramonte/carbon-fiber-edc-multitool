@@ -1,0 +1,35 @@
+flowchart TD
+    e1(["Customer requests return and gets<br/>postage code (company pays,<br/>valid 30 days)"])
+    e3["Receipt: log lot, date and mass<br/>(gloves, double bag)"]
+    triage["Visual and<br/>dimensional triage"]
+    A["A · intact 20%<br/>test piece or<br/>display"]
+    B["B · light wear 20%<br/>second life only<br/>if validated"]
+    C["C · delaminated 50%<br/>goes to<br/>recycling"]
+    D["D · exposed fibre 10%<br/>double bag,<br/>licensed disposal"]
+    scrap["Machining offcuts<br/>11.8 kg per lot"]
+    stock[("Closed stock per lot<br/>until minimum lot<br/>≈ 15.4 kg per lot")]
+    dest["Composite recycler<br/>(acceptance, minimum lot<br/>and price: pending)"]
+    voucher["R$ 20 voucher<br/>(1 per validated card)"]
+    log["Record: lot, mass,<br/>class and destination"]
+    fim(["% received ≥ 10%<br/>or 36 months:<br/>closes the phase"])
+    e1 -->|"customer ships<br/>the card"| e3
+    e3 --> triage
+    triage --> A
+    triage --> B
+    triage --> C
+    triage --> D
+    B -.->|"rejected<br/>in test"| C
+    C -->|"card"| stock
+    D -.->|"card"| stock
+    scrap -->|"offcut"| stock
+    stock -->|"minimum lot<br/>reached"| dest
+    triage -.->|"card validated"| voucher
+    dest -->|"certificate"| log
+    voucher --> log
+    log --> fim
+    classDef hot fill:#ef6c00,stroke:#263238,color:#fff;
+    class triage hot;
+    classDef term fill:#263238,stroke:#263238,color:#fff;
+    class e1,fim term;
+    classDef stock fill:#eceff1,stroke:#263238;
+    class stock stock;

@@ -1,0 +1,37 @@
+parameter,value,unit,evidence_type,source
+card_length_mm,85.60,mm,observed,data/technical_validation_plan.csv (ISO/IEC 7810 ID-1 / CR80 criterion)
+card_width_mm,53.98,mm,observed,data/technical_validation_plan.csv (CR80 criterion)
+card_thickness_mm,2.0,mm,assumed,Upper bound of the acceptance criterion (thickness <= 2 mm); final value defined by CAD
+card_thickness_alt_mm,1.5,mm,assumed,Alternative thinner card used for sensitivity
+density_g_cm3,1.55,g/cm3,assumed,Typical cured carbon-fibre/epoxy laminate; to be replaced by the supplier certificate
+cutout_area_fraction,0.06,fraction,assumed,Share of card area removed by internal functional cut-outs; to be replaced by CAD
+lot_units,2000,units,observed,Report section 5.1 (commercial lot of 2000 units)
+sheet_length_mm,500,mm,assumed,Placeholder cured sheet format; to be replaced by the quotation (activity A4)
+sheet_width_mm,500,mm,assumed,Placeholder cured sheet format; to be replaced by the quotation (activity A4)
+sheet_edge_margin_mm,10,mm,assumed,Unusable border of the sheet
+cut_kerf_mm,1.0,mm,assumed,Abrasive waterjet kerf order of magnitude; to be confirmed by the machining supplier
+net_price_brl,199,BRL,observed,outputs/tables/financial_sensitivity_plan.csv (base scenario)
+variable_cost_brl,80,BRL,observed,outputs/tables/financial_sensitivity_plan.csv (hypothetical variable cost)
+development_budget_brl,54000,BRL,observed,Report section 1.4
+management_reserve_brl,6000,BRL,observed,Report section 2.2
+team_week_cost_per_person_brl,750,BRL,derived,Report activity A9: BRL 1500 for 1 week with 2 people
+horizon_months,36,months,assumed,Hypothesised product life window; to be informed by tests A6
+reverse_freight_brl,15.00,BRL,assumed,Placeholder for a Correios contract price for the 0-300 g band; only obtainable from the contract/simulator
+return_kit_brl,2.50,BRL,assumed,Protective return envelope plus insert
+triage_brl,4.00,BRL,assumed,About 5 minutes of triage and registration per returned card
+voucher_brl,20.00,BRL,assumed,Candidate benefit (about 10% of the net price)
+voucher_redemption_rate,0.50,fraction,assumed,Share of vouchers redeemed; no empirical value available
+cash_benefit_brl,20.00,BRL,assumed,Candidate cash refund alternative
+return_rate_low,0.05,fraction,assumed,Low scenario
+return_rate_mid,0.10,fraction,assumed,Intermediate scenario
+return_rate_ref,0.22,fraction,observed,Harden et al. 2024: Danish ReturPen pens returned about 22% with no reward (different product)
+return_rate_high,0.30,fraction,assumed,High scenario with incentive and convenience
+partner_stores,20,stores,assumed,Pilot network size in Southeast and South
+partner_store_fee_brl,5.00,BRL,assumed,Handling fee paid to the partner per card received
+partner_setup_brl,50.00,BRL,assumed,Collection box and signage per store
+partner_consolidation_shipment_brl,25.00,BRL,assumed,One consolidated shipment per store per quarter
+grade_a_share,0.20,fraction,assumed,Returned cards intact enough for non-commercial reuse
+grade_b_share,0.20,fraction,assumed,Light wear
+grade_c_share,0.50,fraction,assumed,Delaminated or cracked
+grade_d_share,0.10,fraction,assumed,Exposed fibre or contamination
+rework_cost_brl,45.00,BRL,assumed,"Edge re-chamfer, cleaning, re-engraving and re-inspection per card"

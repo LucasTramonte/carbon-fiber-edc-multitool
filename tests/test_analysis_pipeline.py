@@ -61,5 +61,6 @@ def test_financial_and_schedule_outputs_have_expected_contracts() -> None:
     schedule = build_project_schedule()
 
     assert (financial["unit_contribution_margin_brl"] > 0).all()
-    assert len(schedule) == 10
+    assert len(schedule) == 9
+    assert schedule['end_week'].max() == 14 and schedule['cost_brl'].sum() == 54000
     assert {"id", "predecessors", "cost_brl"} <= set(schedule.columns)

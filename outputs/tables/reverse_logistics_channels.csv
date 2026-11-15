@@ -1,0 +1,9 @@
+channel,return_rate,returned_units,cost_per_return_brl,returns_per_store_per_month
+correios_reversa,0.05,100.0,17.5,
+lojas_parceiras,0.05,100.0,75.0,0.1388888888888889
+correios_reversa,0.1,200.0,17.5,
+lojas_parceiras,0.1,200.0,40.0,0.2777777777777778
+correios_reversa,0.22,440.0,17.5,
+lojas_parceiras,0.22,440.0,20.90909090909091,0.6111111111111112
+correios_reversa,0.3,600.0,17.5,
+lojas_parceiras,0.3,600.0,16.666666666666668,0.8333333333333334

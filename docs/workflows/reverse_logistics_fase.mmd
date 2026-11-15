@@ -1,0 +1,16 @@
+flowchart LR
+    D1["D1 · Analyse and approve<br/>discontinuation"]
+    D2["D2 · Plan the<br/>discontinuation"]
+    D3["D3 · Prepare<br/>product receipt"]
+    D4["D4 · Follow<br/>product receipt"]
+    D5["D5 · Stop<br/>production"]
+    D6["D6 · End product<br/>support"]
+    D7["D7 · Overall review and<br/>project closure"]
+    D1 --> D2
+    D2 --> D3
+    D3 --> D4
+    D2 --> D5
+    D5 --> D6
+    D2 --> D6
+    D4 --> D7
+    D6 --> D7

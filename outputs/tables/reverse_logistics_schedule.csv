@@ -1,0 +1,8 @@
+id,activity,start_week,duration_weeks,end_week,predecessors,resources,cost_brl,cost_type
+D1,Analisar e aprovar a descontinuidade,1,1,1,,Equipe (2),1500.0,projeto
+D2,Planejar a descontinuidade,2,1,2,D1,Equipe (2),1500.0,projeto
+D3,"Preparar o recebimento (kit, rotina, registro)",3,2,4,D2,Equipe (1),2600.0,projeto
+D4,Acompanhar o recebimento (janela de devolução),5,156,160,D3,Atendimento,12760.0,operacional
+D5,Descontinuar a produção,3,1,3,D2,Produção (2),1500.0,projeto
+D6,Finalizar suporte ao produto,4,1,4,D2; D5,Equipe (1),750.0,projeto
+D7,Avaliação geral e encerramento,161,1,161,D4; D6,Equipe (2),1500.0,projeto

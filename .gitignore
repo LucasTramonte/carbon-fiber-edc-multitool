@@ -6,6 +6,9 @@ __pycache__/
 .venv/
 
 # Local and restricted academic materials
+assets/courses/
+report/team.local.json
+report/local_assets/
 docs_referencia/
 ER801A - Desenvolvimento de Produtos/
 relatorio_lucas/

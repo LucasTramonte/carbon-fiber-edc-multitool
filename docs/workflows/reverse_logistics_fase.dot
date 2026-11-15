@@ -1,0 +1,20 @@
+digraph reverse_logistics {
+  graph [rankdir=LR, nodesep=0.35, ranksep=0.45, fontname="Arial", fontsize=13, labelloc=t, pad=0.3, newrank=true];
+  node [fontname="Arial", fontsize=11, color="#263238", margin="0.14,0.08"];
+  edge [fontname="Arial", fontsize=9.5, color="#263238", fontcolor="#263238"];
+  D1 [label="D1 · Analyse and approve\ndiscontinuation", shape=box, style="filled", fillcolor="white"];
+  D2 [label="D2 · Plan the\ndiscontinuation", shape=box, style="filled", fillcolor="white"];
+  D3 [label="D3 · Prepare\nproduct receipt", shape=box, style="filled", fillcolor="white"];
+  D4 [label="D4 · Follow\nproduct receipt", shape=box, style="filled", fillcolor="white"];
+  D5 [label="D5 · Stop\nproduction", shape=box, style="filled", fillcolor="white"];
+  D6 [label="D6 · End product\nsupport", shape=box, style="filled", fillcolor="white"];
+  D7 [label="D7 · Overall review and\nproject closure", shape=box, style="filled", fillcolor="white"];
+  D1 -> D2;
+  D2 -> D3;
+  D3 -> D4;
+  D2 -> D5;
+  D5 -> D6;
+  D2 -> D6;
+  D4 -> D7;
+  D6 -> D7;
+}

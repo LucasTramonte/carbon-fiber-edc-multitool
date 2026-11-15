@@ -1,0 +1,8 @@
+decision,option,cost_per_return_brl,custo,estimulo,simplicidade,mensagem,recompra,weighted_score,coverage_upper_bound,cobertura,rastreabilidade,seguranca,esforco
+beneficio_ao_cliente,sem_beneficio,4.0,5.0,1.0,5.0,2.0,1.0,2.9499999999999997,,,,,
+beneficio_ao_cliente,frete_gratis,21.5,3.1333333333333333,3.0,4.0,4.0,2.0,3.24,,,,,
+beneficio_ao_cliente,frete_gratis_voucher,31.5,2.066666666666667,4.0,3.0,4.0,5.0,3.3699999999999997,,,,,
+beneficio_ao_cliente,frete_gratis_dinheiro,41.5,1.0,5.0,2.0,3.0,1.0,2.65,,,,,
+canal_de_recolhimento,correios_reversa,17.5,1.806451612903226,,,,,3.9516129032258065,1.0,5.0,5.0,4.0,4.0
+canal_de_recolhimento,lojas_parceiras,20.90909090909091,1.0,,,,,2.3258600165817005,0.5632166804847502,3.2528667219390006,3.0,2.0,2.0
+canal_de_recolhimento,ponto_unico_presencial,4.0,5.0,,,,,3.25,0.0,1.0,4.0,4.0,3.0

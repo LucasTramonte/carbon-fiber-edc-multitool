@@ -96,23 +96,22 @@ def build_financial_sensitivity() -> pd.DataFrame:
 
 
 def build_project_schedule() -> pd.DataFrame:
-    """Return the planning baseline used by the Gantt visualization."""
+    """Return the planning baseline (single source: ``project_plan``) for the Gantt chart."""
+    try:
+        from src import project_plan as pp
+    except ImportError:  # pragma: no cover
+        import project_plan as pp
+    sched, costs = pp.schedule().set_index("id"), pp.cost_table().set_index("id")
+    rows = []
+    for activity in pp.ACTIVITIES:
+        s = sched.loc[activity.ident]
+        rows.append([activity.ident, activity.name, int(s["start_week"]), int(s["duration_weeks"]),
+                     int(s["end_week"]), s["predecessors"], costs.loc[activity.ident, "labour_codes"],
+                     float(costs.loc[activity.ident, "activity_cost_brl"]), int(s["slack_weeks"]),
+                     bool(s["critical"])])
     return pd.DataFrame(
-        [
-            ["A1", "Requirements and primary research", 1, 2, 2, "—", "Team (2)", 2500],
-            ["A2", "Functions and morphological matrix", 3, 1, 3, "A1", "Team (2)", 1500],
-            ["A3", "CAD, architecture, and tolerances", 4, 2, 5, "A2", "Design (2)", 5000],
-            ["A4", "Sheet quotation and procurement", 3, 2, 4, "A1", "Purchasing (1)", 18000],
-            ["A5", "Machined prototypes", 6, 2, 7, "A3; A4", "Supplier", 6000],
-            ["A6", "Testing and optimization", 8, 2, 9, "A5", "Team (2)", 4500],
-            ["A7", "Process, packaging, and inspection", 10, 2, 11, "A6", "Production (2)", 7000],
-            ["A8", "Commercial batch preparation", 12, 2, 13, "A7", "Production (2)", 8000],
-            ["A9", "Pilot launch and monitoring", 14, 2, 15, "A8", "Marketing (1)", 1500],
-            ["A10", "Closeout and lessons learned", 16, 1, 16, "A9", "Team (2)", 0],
-        ],
-        columns=["id", "activity", "start_week", "duration_weeks", "end_week",
-                 "predecessors", "resources", "cost_brl"],
-    )
+        rows, columns=["id", "activity", "start_week", "duration_weeks", "end_week", "predecessors",
+                       "resources", "cost_brl", "slack_weeks", "critical"])
 
 
 def save_visualizations(regional: pd.DataFrame, financial: pd.DataFrame,
@@ -147,9 +146,7 @@ def save_visualizations(regional: pd.DataFrame, financial: pd.DataFrame,
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(12, 7.5))
-    critical_path = {"A1", "A2", "A3", "A5", "A6", "A7", "A8", "A9", "A10"}
-    colors = ["#37474f" if item in critical_path else "#90a4ae"
-              for item in schedule["id"]]
+    colors = ["#37474f" if flag else "#90a4ae" for flag in schedule["critical"]]
     y = np.arange(len(schedule))
     ax.barh(y, schedule["duration_weeks"], left=schedule["start_week"] - 0.5,
             color=colors, edgecolor="#263238", height=0.62)
@@ -157,7 +154,7 @@ def save_visualizations(regional: pd.DataFrame, financial: pd.DataFrame,
                              in zip(schedule["id"], schedule["activity"])])
     ax.invert_yaxis()
     ax.set(title="Project planning baseline", xlabel="Project week", ylabel="Activity")
-    ax.set_xticks(np.arange(1, 17))
+    ax.set_xticks(np.arange(1, int(schedule["end_week"].max()) + 1))
     ax.grid(axis="x", alpha=0.3)
     fig.subplots_adjust(left=0.36, right=0.98, top=0.9, bottom=0.12)
     fig.savefig(output_dir / "project_schedule_gantt.png", dpi=180)

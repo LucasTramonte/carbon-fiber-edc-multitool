@@ -1,0 +1,17 @@
+{
+  "institution": [
+    "Universidade Estadual de Campinas (UNICAMP)",
+    "Faculdade de Ciências Aplicadas (FCA)",
+    "Cursos de Engenharia de Produção e Manufatura"
+  ],
+  "course": "ER801 A",
+  "group": "1",
+  "due_date": "24/11/2026",
+  "members": [
+    {"name": "Nome do discente 1", "ra": "000000"},
+    {"name": "Nome do discente 2", "ra": "000000"},
+    {"name": "Nome do discente 3", "ra": "000000"}
+  ],
+  "city": "Limeira",
+  "year": 2026
+}

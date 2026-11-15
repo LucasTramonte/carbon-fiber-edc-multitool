@@ -1,0 +1,33 @@
+digraph reverse_logistics {
+  graph [rankdir=TB, nodesep=0.35, ranksep=0.45, fontname="Arial", fontsize=13, labelloc=t, pad=0.3, newrank=true];
+  node [fontname="Arial", fontsize=11, color="#263238", margin="0.14,0.08"];
+  edge [fontname="Arial", fontsize=9.5, color="#263238", fontcolor="#263238"];
+  e1 [label="Customer requests return and gets\npostage code (company pays,\nvalid 30 days)", shape=box, style="rounded,filled", fillcolor="#263238", fontcolor="white"];
+  e3 [label="Receipt: log lot, date and mass\n(gloves, double bag)", shape=box, style="filled", fillcolor="white"];
+  triage [label="Visual and\ndimensional triage", shape=box, style="filled", fillcolor="#ef6c00", fontcolor="white"];
+  A [label="A · intact 20%\ntest piece or\ndisplay", shape=box, style="filled", fillcolor="white"];
+  B [label="B · light wear 20%\nsecond life only\nif validated", shape=box, style="filled", fillcolor="white"];
+  C [label="C · delaminated 50%\ngoes to\nrecycling", shape=box, style="filled", fillcolor="white"];
+  D [label="D · exposed fibre 10%\ndouble bag,\nlicensed disposal", shape=box, style="filled", fillcolor="white"];
+  scrap [label="Machining offcuts\n11.8 kg per lot", shape=box, style="filled", fillcolor="white"];
+  stock [label="Closed stock per lot\nuntil minimum lot\n≈ 15.4 kg per lot", shape=cylinder, style=filled, fillcolor="#eceff1"];
+  dest [label="Composite recycler\n(acceptance, minimum lot\nand price: pending)", shape=box, style="filled", fillcolor="white"];
+  voucher [label="R$ 20 voucher\n(1 per validated card)", shape=box, style="filled", fillcolor="white"];
+  log [label="Record: lot, mass,\nclass and destination", shape=box, style="filled", fillcolor="white"];
+  fim [label="% received ≥ 10%\nor 36 months:\ncloses the phase", shape=box, style="rounded,filled", fillcolor="#263238", fontcolor="white"];
+  e1 -> e3 [label="customer ships\nthe card"];
+  e3 -> triage;
+  triage -> A;
+  triage -> B;
+  triage -> C;
+  triage -> D;
+  B -> C [label="rejected\nin test", style=dashed];
+  C -> stock [label="card"];
+  D -> stock [label="card", style=dashed];
+  scrap -> stock [label="offcut"];
+  stock -> dest [label="minimum lot\nreached"];
+  triage -> voucher [label="card validated", style=dashed];
+  dest -> log [label="certificate"];
+  voucher -> log;
+  log -> fim;
+}
