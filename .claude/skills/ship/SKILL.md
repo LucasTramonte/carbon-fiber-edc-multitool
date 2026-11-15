@@ -9,7 +9,8 @@ The local machine differs from the CI (Python 3.12 with Graphviz versus Python 3
 green local run is not enough.
 
 1. `git status` and `git diff --stat`: confirm that only intended files changed and that nothing private is
-   staged (`.docx`, `.pdf`, `assets/courses/`, `report/team.local.json`, `report/local_assets/`).
+   staged (`.docx`, `.pdf`, `assets/courses/`, `report/team.local.json`, `report/local_assets/`). The only PDF
+   that may be staged is `docs/report/carbon-fiber-edc-multitool-report-en.pdf`, together with `report-en.sha256`.
 2. `python -m pytest -q` must pass. The `git_gate` hook also runs it before every commit.
 3. **Before a push**: `python scripts/ci_local.py` (Python 3.10, no Graphviz). The hook runs it before every push.
    Add `3.13` to check the newest version as well.

@@ -45,6 +45,15 @@ def pct(value: float, digits: int = 0) -> str:
     return f"{br(value * 100, digits)}%"
 
 
+WORDS = {
+    "pt": {"table": "Tabela", "figure": "Figura", "source": "Fonte", "appendix": "Apêndice", "section": "Seção",
+           "swot": ("Forças (interno, positivo)", "Fraquezas (interno, negativo)", "Oportunidades (externo, positivo)",
+                    "Ameaças (externo, negativo)")},
+    "en": {"table": "Table", "figure": "Figure", "source": "Source", "appendix": "Appendix", "section": "Section",
+           "swot": ("Strengths (internal, positive)", "Weaknesses (internal, negative)",
+                    "Opportunities (external, positive)", "Threats (external, negative)")},
+}
+
 NBSP = "\u00a0"
 NB_HYPHEN = "\u2011"
 SHORT_PHRASE_CM = 5.0  # clauses up to this width stay on one line when the table allows it
@@ -147,8 +156,8 @@ def fit_columns(headers: list[str], rows: list[list[str]], widths: list[float], 
     return fonts, widths
 
 
-_NUMBER_UNIT = re.compile(r"(?<=\d) (?=(?:g|kg|mm|cm|m|min|h|dias|semanas|meses|mil|unidades|cartões)\b)")
-_LABEL_NUMBER = re.compile(r"\b(Lei|art\.|arts\.|R\$|US\$|€|Seção|Tabela|Figura|Apêndice) (?=\d)")
+_NUMBER_UNIT = re.compile(r"(?<=\d) (?=(?:g|kg|mm|cm|m|min|h|dias|semanas|meses|mil|unidades|cartões|days|weeks|months|cards|units|k)\b)")
+_LABEL_NUMBER = re.compile(r"\b(Lei|art\.|arts\.|R\$|US\$|€|Seção|Tabela|Figura|Apêndice|Section|Table|Figure|Appendix) (?=\d)")
 
 
 def bind_numbers(text: str) -> str:
@@ -182,29 +191,36 @@ def load_team() -> dict:
 class Builder:
     """Small helper that applies the course formatting rules."""
 
-    def __init__(self, label_map: dict[str, dict[str, str]] | None = None) -> None:
+    def __init__(self, label_map: dict[str, dict[str, str]] | None = None, lang: str = "pt",
+                 compact: bool = False) -> None:
         """``label_map`` maps title prefixes (tables, headings) or file names (figures) to a label; the
         builder records the number it gives each one in ``labels`` so text can cite it without typing it."""
+        self.lang, self.words = lang, WORDS[lang]
         self.label_map = label_map or {}
         self.labels: dict[str, str] = {}
         self.figure_log: list[tuple[str, float, float]] = []  # file, placed width in cm, scale
         self.doc = Document()
         section = self.doc.sections[0]
         section.page_height, section.page_width = Cm(29.7), Cm(21.0)
-        section.top_margin, section.left_margin = Cm(3), Cm(3)
-        section.bottom_margin, section.right_margin = Cm(2), Cm(2)
+        # the course norms (Portuguese report): margins 3, 3, 2, 2 cm, Times 12, 1.5 spacing; the compact layout
+        # (English edition) uses 2.5 cm margins, Times 11 and 1.15 spacing
+        section.top_margin, section.left_margin = Cm(2.5 if compact else 3), Cm(2.5 if compact else 3)
+        section.bottom_margin, section.right_margin = Cm(2.2 if compact else 2), Cm(2.5 if compact else 2)
         normal = self.doc.styles["Normal"]
         normal.font.name = "Times New Roman"
-        normal.font.size = Pt(12)
+        normal.font.size = Pt(11 if compact else 12)
         normal.element.rPr.rFonts.set(qn("w:eastAsia"), "Times New Roman")
         fmt = normal.paragraph_format
-        fmt.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
-        fmt.space_after = Pt(4)
+        if compact:
+            fmt.line_spacing = 1.15
+        else:
+            fmt.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+        fmt.space_after = Pt(6 if compact else 4)
         fmt.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
         for style_name in ("List Bullet",):
             style = self.doc.styles[style_name]
             style.font.name = "Times New Roman"
-            style.font.size = Pt(12)
+            style.font.size = Pt(11 if compact else 12)
         self._footer_page_number(section)
         self.fig_no = 0
         self.tab_no = 0
@@ -241,7 +257,7 @@ class Builder:
     def heading(self, text: str, level: int = 1, new_page: bool = False) -> None:
         number, _, title = text.partition(" ")
         if number.rstrip(".").replace(".", "").isdigit():
-            self._register("headings", title, f"Seção {number.rstrip('.')}")
+            self._register("headings", title, f"{self.words['section']} {number.rstrip('.')}")
         paragraph = self.doc.add_paragraph()
         paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
         paragraph.paragraph_format.keep_with_next = True
@@ -258,7 +274,7 @@ class Builder:
         self.prefix = f"{letter}."
         self.fig_no = 0
         self.tab_no = 0
-        self.heading(f"Apêndice {letter}: {title}", 1, new_page=True)
+        self.heading(f"{self.words['appendix']} {letter}: {title}", 1, new_page=True)
 
     # ------------------------------------------------------------------ text
     def para(self, text: str, bold_lead: str | None = None) -> None:
@@ -286,7 +302,7 @@ class Builder:
     # --------------------------------------------------------------- figures
     def figure(self, filename: str, caption: str, width_cm: float = 14.0, source: str = "") -> None:
         self.fig_no += 1
-        self._register("figures", filename, f"Figura {self.prefix}{self.fig_no}")
+        self._register("figures", filename, f"{self.words['figure']} {self.prefix}{self.fig_no}")
         from PIL import Image
 
         with Image.open(FIGURES / filename) as image:
@@ -300,9 +316,9 @@ class Builder:
         paragraph.paragraph_format.space_before = Pt(0)
         paragraph.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
         paragraph.add_run().add_picture(str(FIGURES / filename), width=Cm(width_cm))
-        text = f"Figura {self.prefix}{self.fig_no}: {caption}"
+        text = f"{self.words['figure']} {self.prefix}{self.fig_no}: {caption}"
         if source:
-            text += f" Fonte: {source}"
+            text += f" {self.words['source']}: {source}"
         self.small(text, 10)
 
     # ---------------------------------------------------------------- tables
@@ -310,13 +326,13 @@ class Builder:
               source: str = "", font: float = 9.5, bold_rows: tuple[int, ...] = (),
               right_cols: tuple[int, ...] = ()) -> None:
         self.tab_no += 1
-        self._register("tables", title, f"Tabela {self.prefix}{self.tab_no}")
+        self._register("tables", title, f"{self.words['table']} {self.prefix}{self.tab_no}")
         caption = self.doc.add_paragraph()
         caption.alignment = WD_ALIGN_PARAGRAPH.LEFT
         caption.paragraph_format.keep_with_next = True
         caption.paragraph_format.space_after = Pt(2)
         caption.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
-        run = caption.add_run(f"Tabela {self.prefix}{self.tab_no}: {title}")
+        run = caption.add_run(f"{self.words['table']} {self.prefix}{self.tab_no}: {title}")
         run.bold = True
         run.font.size = Pt(10)
         table = self.doc.add_table(rows=1, cols=len(headers))
@@ -346,7 +362,7 @@ class Builder:
                 for paragraph in cell.paragraphs:
                     paragraph.paragraph_format.keep_with_next = True
         if source:
-            self.small(f"Fonte: {source}", 9.5)
+            self.small(f"{self.words['source']}: {source}", 9.5)
         else:
             self.small("", 4)
 
@@ -386,15 +402,11 @@ class Builder:
             else:
                 paragraph.add_run(part)
 
-    SWOT_STYLE = {
-        "FORÇAS": ("Forças (interno, positivo)", "E1EDFA", "1F5FAA"),
-        "FRAQUEZAS": ("Fraquezas (interno, negativo)", "FBEEE0", "A8501A"),
-        "OPORTUNIDADES": ("Oportunidades (externo, positivo)", "E3F2E4", "1B7032"),
-        "AMEAÇAS": ("Ameaças (externo, negativo)", "F9E6E6", "A02E2E"),
-    }
+    SWOT_COLOURS = (("E1EDFA", "1F5FAA"), ("FBEEE0", "A8501A"), ("E3F2E4", "1B7032"), ("F9E6E6", "A02E2E"))
 
     def swot_matrix(self, caption: str, quadrants: dict[str, tuple[str, ...]], source: str = "") -> None:
-        """SWOT as a shaded 2 x 2 table, numbered and captioned as a figure."""
+        """SWOT as a shaded 2 x 2 table, numbered and captioned as a figure. ``quadrants`` lists strengths,
+        weaknesses, opportunities and threats, in this order."""
         self.fig_no += 1
         table = self.doc.add_table(rows=2, cols=2)
         table.style = "Table Grid"
@@ -405,8 +417,9 @@ class Builder:
         table._tbl.tblPr.append(layout)
         for column in table.columns:
             column.width = Cm(8.0)
-        for index, name in enumerate(("FORÇAS", "FRAQUEZAS", "OPORTUNIDADES", "AMEAÇAS")):
-            label, fill, ink = self.SWOT_STYLE[name]
+        for index, items in enumerate(list(quadrants.values())[:4]):
+            label = self.words["swot"][index]
+            fill, ink = self.SWOT_COLOURS[index]
             cell = table.cell(index // 2, index % 2)
             cell.width = Cm(8.0)
             props = cell._tc.get_or_add_tcPr()
@@ -422,7 +435,7 @@ class Builder:
             run.bold = True
             run.font.size = Pt(10)
             run.font.color.rgb = RGBColor.from_string(ink)
-            for item in quadrants[name]:
+            for item in items:
                 line = cell.add_paragraph()
                 line.alignment = WD_ALIGN_PARAGRAPH.LEFT
                 line.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
@@ -433,9 +446,9 @@ class Builder:
                 bullet.font.size = Pt(9)
             if index % 2 == 0:
                 self._no_split(table.rows[index // 2])
-        text = f"Figura {self.prefix}{self.fig_no}: {caption}"
+        text = f"{self.words['figure']} {self.prefix}{self.fig_no}: {caption}"
         if source:
-            text += f" Fonte: {source}"
+            text += f" {self.words['source']}: {source}"
         self.small(text, 10)
 
     @staticmethod
@@ -472,6 +485,17 @@ class Builder:
             props.append(fill)
 
     # ----------------------------------------------------------------- cover
+    def title_block(self, title: str, subtitle: str, abstract: str) -> None:
+        """Title, subtitle and abstract at the top of the first page (no course cover, no personal data)."""
+        for text, size, bold, italic, after in ((title, 22, True, False, 2), (subtitle, 13, False, True, 14)):
+            paragraph = self.doc.add_paragraph()
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            paragraph.paragraph_format.space_after = Pt(after)
+            paragraph.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
+            run = paragraph.add_run(text)
+            run.bold, run.italic, run.font.size = bold, italic, Pt(size)
+        self.para(abstract)
+
     def cover(self, title: str, subtitle: str, team: dict) -> None:
         def centered(text: str, size: float = 12, bold: bool = False, italic: bool = False,
                      space_after: float = 6) -> None:

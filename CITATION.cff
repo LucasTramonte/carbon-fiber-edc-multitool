@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "Carbon Fiber EDC Multitool: evidence-led product development"
+abstract: >-
+  Reproducible product-development study for a compact carbon-fibre card multitool for everyday carry
+  and urban cycling: concept design, project plan, economic viability model and end-of-life planning.
+type: software
+authors:
+  - family-names: Tramonte
+    given-names: Lucas
+  - family-names: Landivar Silva
+    given-names: Marco Gabriel
+license: MIT
+repository-code: "https://github.com/LucasTramonte/carbon-fiber-edc-multitool"
+keywords:
+  - product development
+  - carbon fibre
+  - economic viability
+  - reverse logistics

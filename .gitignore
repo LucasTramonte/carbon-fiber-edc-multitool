@@ -56,3 +56,6 @@ src/gerar_relatorio_docx.py
 # Local CI environments built by scripts/ci_local.py
 .ci-venvs/
 .claude/settings.local.json
+
+# The English report is published on purpose (the Portuguese one is not)
+!docs/report/*.pdf

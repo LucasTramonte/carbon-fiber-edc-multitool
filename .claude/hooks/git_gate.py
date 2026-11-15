@@ -50,7 +50,8 @@ def main() -> int:
     if re.search(r"\bgit\b[^;&|\n]*\badd\b[^;&|\n]*(\s-f\b|--force)", command):
         problems.append("`git add --force` would bypass .gitignore; .docx, .pdf and course files stay local.")
     code, staged = run(["git", "diff", "--cached", "--name-only"], 30)
-    forbidden = [name for name in staged.splitlines() if PRIVATE.search(name)]
+    # the English report in docs/report is published on purpose; every other .pdf and .docx is private
+    forbidden = [name for name in staged.splitlines() if PRIVATE.search(name) and not name.startswith("docs/report/")]
     if forbidden:
         problems.append("private or generated files are staged: " + ", ".join(forbidden))
 

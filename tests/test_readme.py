@@ -68,3 +68,63 @@ def test_inline_dollars_only_wrap_math_in_backticks() -> None:
     for inline in re.findall(r"\$`([^`]+)`\$", README):
         assert "*" not in inline and "%" not in inline, inline
         assert inline.count("{") == inline.count("}"), inline
+
+
+def test_at_a_glance_numbers_match_the_models() -> None:
+    from src import generate_report_docx as gr
+    from src import strategic_analysis as sa
+
+    p = rl.load_assumptions()
+    unit_net = p["net_price_brl"] - p["variable_cost_brl"] - rl.end_of_life_unit_cost(p)
+    scores = gr.concept_scores()
+    t_be = pp.payback_months(pp.cash_flows(1000, unit_net))
+    glance = README.split("## At a glance")[1].split("## Contents")[0]
+    expected = (
+        f"weighted score {scores['B']:.2f} against {scores['A']:.2f} and {scores['C']:.2f}",
+        f"BRL {pp.BUDGET:,.0f} plus a BRL {pp.RESERVE:,.0f} reserve",
+        f"critical path {', '.join(pp.critical_path())}",
+        f"Break-even at {int(pp.BUDGET / unit_net) + 1} cards (month {t_be:.1f}",
+        f"NPV positive from {round(pp.units_for_zero_npv(unit_net))} cards at the {pp.DISCOUNT_RATE * 100:.2f}% Selic",
+        f"pressure {sa.porter_mean():.1f} out of 5",
+    )
+    for fragment in expected:
+        assert fragment in glance, fragment
+
+
+def _slug(heading: str) -> str:
+    """GitHub's anchor for a heading: lower case, punctuation removed, spaces turned into hyphens."""
+    text = re.sub(r"[^\w\- ]", "", heading.strip().lower())
+    return text.replace(" ", "-")
+
+
+def test_relative_links_and_images_point_to_files_that_exist() -> None:
+    root = Path(__file__).resolve().parents[1]
+    targets = re.findall(r"\]\(([^)\s]+)\)", README) + re.findall(r'(?:src|srcset|href)="([^"]+)"', README)
+    checked = 0
+    for target in targets:
+        if target.startswith(("http://", "https://", "#", "mailto:")):
+            continue
+        path = target.split("#")[0]
+        assert (root / path).exists(), f"README points to a missing file: {target}"
+        checked += 1
+    assert checked >= 8  # logo (two), report, license, citation, data README, outputs README, chart
+
+
+def test_in_page_links_match_a_heading() -> None:
+    headings = {_slug(m.group(1)) for line in _outside_code_fences(README)
+                for m in [re.match(r"#{1,6}\s+(.*)", line)] if m}
+    anchors = re.findall(r"\]\(#([^)\s]+)\)", README)
+    assert anchors
+    missing = [a for a in anchors if a not in headings]
+    assert not missing, missing
+
+
+def test_logo_files_are_transparent_vector_drawings() -> None:
+    brand = Path(__file__).resolve().parents[1] / "assets" / "brand"
+    for name in ("logo-light.svg", "logo-dark.svg"):
+        svg = (brand / name).read_text(encoding="utf-8")
+        assert svg.lstrip().startswith("<svg") and "<title" in svg
+        assert "<image" not in svg and "background" not in svg.lower()
+        for fragile in ("<pattern", "<mask", "<clipPath", "Gradient"):
+            assert fragile not in svg, f"{name} uses {fragile}, which some renderers ignore"
+    assert not (brand / "product-mark.png").exists(), "the old raster logo (watermarked stock image) is gone"

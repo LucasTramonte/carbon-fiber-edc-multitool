@@ -1,22 +1,54 @@
 <div align="center">
-  <img src="assets/brand/product-mark.png" alt="Carbon Fiber EDC Multitool product mark" width="220">
-  <h1>Carbon Fiber EDC Multitool</h1>
-  <p>Evidence-led product development for everyday carry and urban cycling.</p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logo-dark.svg">
+    <img src="assets/brand/logo-light.svg" alt="Carbon Fiber EDC Multitool" width="640">
+  </picture>
 </div>
 
 <div align="center">
 
 [![CI](https://github.com/LucasTramonte/carbon-fiber-edc-multitool/actions/workflows/ci.yml/badge.svg)](https://github.com/LucasTramonte/carbon-fiber-edc-multitool/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/LucasTramonte/carbon-fiber-edc-multitool/actions/workflows/codeql.yml/badge.svg)](https://github.com/LucasTramonte/carbon-fiber-edc-multitool/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776ab.svg)](#quick-start)
+[![Report: PDF in English](https://img.shields.io/badge/report-PDF%20in%20English-b71c1c.svg)](docs/report/carbon-fiber-edc-multitool-report-en.pdf)
+
+**[Read the report (PDF)](docs/report/carbon-fiber-edc-multitool-report-en.pdf)** &nbsp;·&nbsp; [Economic model](#economic-viability-model) &nbsp;·&nbsp; [Workflows](#workflow-at-a-glance) &nbsp;·&nbsp; [Quick start](#quick-start)
 
 </div>
 
-Reproducible product-development study for a compact carbon-fiber card
-multitool intended for everyday carry (EDC) and urban cycling.
+Reproducible product-development study for a compact carbon-fibre card multitool in the CR80 format,
+intended for everyday carry (EDC) and urban cycling. The repository separates public source data,
+executable code, tests and generated outputs, so each result can be traced to its inputs and reproduced
+locally.
 
-The repository is organized as a small research and analysis project. It
-separates public source data, executable code, tests, and generated outputs so
-that each result can be traced to its inputs and reproduced locally.
+> **Start here.** The [English report (PDF, 10 pages)](docs/report/carbon-fiber-edc-multitool-report-en.pdf) summarises the whole study: market and
+> competitors, concept design, project plan, economic viability and end-of-life planning. The Portuguese
+> course report is generated from the same models and stays local.
+
+## At a glance
+
+| | |
+| --- | --- |
+| **Product** | One flat CR80 piece (85.60 x 53.98 mm, up to 2 mm) of carbon-fibre laminate with hexagonal wrench cutouts, a blunt chamfer for opening packages, an engraved scale and lot number |
+| **Concept** | Alternative B (chamfer, engraved scale, hexagonal cutouts), weighted score 4.60 against 3.30 and 3.35 |
+| **Project** | 14 weeks, BRL 54,000 plus a BRL 6,000 reserve; critical path A1, A2, A3, A5, A6, A7, A8, A9 |
+| **Viability** | Break-even at 501 cards (month 9.2 when 1,000 cards sell in 12 months); NPV positive from 544 cards at the 13.75% Selic rate |
+| **Competition** | One direct carbon-fibre competitor (Touch of Ginger TOG09); five-forces pressure 3.6 out of 5 |
+| **End of life** | Voluntary take-back by reverse mail with a discount voucher; remanufacturing is not viable |
+
+All prices, costs and scores are planning hypotheses unless a source is cited; the report and
+[the viability section](#economic-viability-model) say which is which.
+
+## Contents
+
+[Project scope](#project-scope) · [Workflow at a glance](#workflow-at-a-glance) ·
+[Repository architecture](#repository-architecture) · [Engineering automation](#engineering-automation) ·
+[Quick start](#quick-start) · [Reproduce the analysis](#reproduce-the-analysis) ·
+[Economic viability model](#economic-viability-model) · [Quality checks](#test-driven-quality-checks) ·
+[Data governance](#data-governance) · [Security and privacy](#security-and-privacy) ·
+[Container usage](#container-usage) · [Team contributions](#team-contributions) ·
+[License](#license-and-attribution)
 
 ## Project scope
 
@@ -38,8 +70,8 @@ The current scope covers:
   public statistics (IBGE, Cetic.br), the national cyclist profile survey,
   patents and competing products, with ROI, NPV and IRR goals by sales volume and a
   sample-size and price-research design for the primary research still to do;
-- the complete Portuguese course report as DOCX (body under 15 pages plus
-  appendices), generated from those models.
+- an English report as a PDF in `docs/report/` (linked at the top), and the complete Portuguese
+  course report as DOCX (body of about 15 pages plus appendices), both generated from those models.
 
 This is not a sales forecast, a safety certification, a manufacturing drawing,
 or evidence of product-market fit. Technical specifications and commercial
@@ -205,8 +237,11 @@ edit the blocks by hand; run `python src\reverse_flow_diagram.py`.
 
 ```text
 .
-├── assets/brand/               # Public visual identity assets
+├── assets/brand/               # Logo (light and dark SVG), drawn by scripts/make_logo.py
+├── docs/report/                # English report (PDF) and the hash that keeps it in sync with the code
 ├── docs/workflows/             # Generated Mermaid (.mmd) and Graphviz (.dot) sources
+├── scripts/                    # CI parity check, report PDF build and layout check, logo generator
+├── .claude/                    # Project skills and hooks for AI agents (see CLAUDE.md)
 ├── report/                     # Cover data template (the real team file is git-ignored)
 ├── data/                       # Public inputs and raw API extracts
 │   ├── README.md               # Provenance and data contracts
@@ -219,13 +254,16 @@ edit the blocks by hand; run `python src\reverse_flow_diagram.py`.
 ├── src/                        # Reusable Python modules and CLI entry points
 ├── tests/                      # Unit, integration, and adversarial tests
 │   └── adversarial/
+├── CLAUDE.md                   # Working rules for AI agents
+├── CITATION.cff                # How to cite this work
 ├── Dockerfile
+├── LICENSE                     # MIT
 ├── requirements.txt
 └── .env.example
 ```
 
-The product mark is included as a visual identity asset and is displayed at
-the top of this document. It is kept separate from analysis outputs and data.
+The logo is a vector drawing generated by `scripts/make_logo.py`; the README picks the light or the
+dark variant to match the reader's GitHub theme.
 
 ## Engineering automation
 
@@ -253,9 +291,9 @@ credentials, personal data, and private marketplace exports are intentionally
 excluded. The repository is designed to remain publishable without exposing
 restricted course material.
 
-## Environment setup
+## Quick start
 
-Python 3.10 or newer is recommended.
+Python 3.10 or newer is required (the CI runs 3.10 to 3.13).
 
 ```powershell
 python -m venv .venv
@@ -291,6 +329,9 @@ python src\generate_report_docx.py        # models, diagrams, figures and the re
 python src\reverse_flow_diagram.py        # only the workflow diagrams and README blocks
 python src\strategic_analysis.py          # only the SWOT and five-forces figures
                                           #   -> outputs\visualizations\fig_swot.png, fig_porter.png
+python src\generate_report_en.py          # the English edition -> outputs\report_en.docx
+powershell scripts\build_report_pdf.ps1 -Edition en   # ... and the PDF in docs\report (needs Word)
+python scripts\ci_local.py                # the CI steps on Python 3.10 without Graphviz
 ```
 
 The SWOT items, the five-force scores and their justifications live in
@@ -441,7 +482,8 @@ Never commit:
 - `.env` files, access tokens, refresh tokens, client secrets, or passwords;
 - personal information or raw participant responses;
 - private marketplace exports or screenshots containing account data;
-- course handouts, copyrighted reference files, or unpublished reports.
+- course handouts, copyrighted reference files, or the Portuguese course report (its cover carries the team's
+  personal data). The English report in `docs/report/` is the only report published; it has no personal data.
 
 Use `.env.example` only as a list of variable names. Do not paste secrets into
 issues, commits, logs, notebooks, or terminal output. The `.gitignore` file
@@ -469,6 +511,9 @@ git. Its content is versioned here as data and code instead.
 
 ## License and attribution
 
-No open-source license is currently granted. Public data remains subject to
-the terms of its original providers. Cite IBGE/SIDRA and Cetic.br according to
-their official documentation when reusing the datasets or derived results.
+The code, documentation and original figures are released under the [MIT License](LICENSE). Public data
+remains subject to the terms of its original providers: cite IBGE/SIDRA and Cetic.br according to their
+official documentation when reusing the datasets or derived results. Course handouts and the team's cover data
+are not part of the repository and are not covered by this license.
+
+To cite this work, use [`CITATION.cff`](CITATION.cff) or GitHub's "Cite this repository" button.

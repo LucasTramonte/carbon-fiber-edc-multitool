@@ -52,6 +52,13 @@ ACTIVITIES = (
     Activity("A9", "Encerramento e lições aprendidas", 1, ("A8",), "7.0", (("EQ", 2),), 250, 0, 1500),
 )
 
+ACTIVITY_NAMES_EN = {
+    "A1": "Requirements and primary research", "A2": "Functions and morphological matrix",
+    "A3": "CAD, architecture and tolerances", "A4": "Quotation and purchase of the sheet",
+    "A5": "Machined prototypes", "A6": "Tests and optimisation", "A7": "Process, packaging and inspection",
+    "A8": "Pilot launch", "A9": "Closing and lessons learned",
+}
+
 DELIVERABLES = {
     "1.0": "Gestão e requisitos",
     "2.0": "Projeto conceitual",

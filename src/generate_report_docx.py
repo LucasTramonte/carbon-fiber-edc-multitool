@@ -15,12 +15,14 @@ try:
     from src import project_plan as pp
     from src import reverse_logistics_model as rl
     from src import omml as mm
+    from src import report_equations as eq
     from src import strategic_analysis as sa
     from src.docx_builder import Builder, br, brl, load_team, pct
 except ImportError:  # pragma: no cover
     import project_plan as pp
     import reverse_logistics_model as rl
     import omml as mm
+    import report_equations as eq
     import strategic_analysis as sa
     from docx_builder import Builder, br, brl, load_team, pct
 
@@ -57,12 +59,13 @@ LABEL_MAP = {
         "Planejamento estratégico do produto": "strat", "Concorrentes de referência": "compet",
         "Fontes de informação": "fontes", "Intensidade das cinco forças": "porter", "Termo de abertura": "charter",
         "Escopo do produto": "escopo", "Atividades, precedências e custos": "atividades", "Custo padrão": "custos",
-        "Viabilidade econômica por volume": "viab", "Matriz morfológica": "morf",
+        "Viabilidade econômica por volume": "viab", "Matriz morfológica": "morf", "Plano macro do processo": "macro",
+        "Lista de materiais": "bom",
         "Atividades da fase de descontinuidade": "fase_ativ",
     },
     "figures": {
         "fig_organograma.png": "org", "fig_eap.png": "eap", "fig_viabilidade.png": "viab_fig",
-        "reverse_flow_fase.png": "fase_fig", "fig_porter.png": "porter_fig",
+        "reverse_flow_fase.png": "fase_fig", "fig_porter.png": "porter_fig", "fig_estrutura.png": "estrutura",
     },
     "headings": {
         "Inovação e tecnologia": "s_inov", "Mercado e coleta de informações": "s_mercado",
@@ -414,34 +417,14 @@ def _build(labels: dict[str, str]) -> Builder:
              source=f"elaboração própria a partir da {R('atividades')}.")
     b.heading("2.6 Viabilidade econômica", 2)
     unit_net = margin - eol_unit
-    V, N, SUB, SUP, FR, SUM, PAR = mm.v, mm.n, mm.sub, mm.sup, mm.frac, mm.total, mm.paren
-    F_t, C_t = SUB(V("F"), V("t")), SUB(V("C"), V("t"))
-    T_d, T_v, i_s = SUB(V("T"), V("d")), SUB(V("T"), V("v")), SUB(V("i"), V("s"))
-    r_star = SUP(V("r"), N("*"))
-    discounted = lambda rate: SUP(PAR(N("1 + ") + rate), V("t"))  # noqa: E731
+    V, N, SUB, SUP, FR, SUM, PAR = eq.V, eq.N, eq.SUB, eq.SUP, eq.FR, eq.SUM, eq.PAR
+    F_t, C_t, T_d, T_v, i_s, r_star = eq.F_t, eq.C_t, eq.T_d, eq.T_v, eq.i_s, eq.r_star
     b.para(
         f"O modelo usa um fluxo de caixa semanal: o investimento segue a linha de base de custo ({R('atividades')}) e as "
         "vendas, em ritmo constante, começam depois do desenvolvimento. Os fluxos ocorrem no fim de cada semana e "
         "o custo de fim de vida é proporcional às unidades vendidas. Com a notação abaixo, valem as equações:"
     )
-    b.equation(V("m") + N(" = ") + V("p") + N(f" {mm.MINUS} ") + SUB(V("c"), V("v")) + N(f" {mm.MINUS} ")
-               + SUB(V("c"), V("f")))
-    b.equation(F_t + N(" = ") + mm.cases(
-        N(mm.MINUS) + C_t + N(",   para   1 \u2264 ") + V("t") + N(" \u2264 ") + T_d,
-        FR(V("Q"), T_v) + N(f" {mm.CDOT} ") + V("m") + N(",   para   ") + T_d + N(" < ") + V("t")
-        + N(" \u2264 ") + V("T")))
-    b.equation(N("VPL = ") + SUM(N("t = 1"), V("T"), FR(F_t, discounted(i_s))) + N(",   com   ") + i_s + N(" = ")
-               + SUP(PAR(N("1 + ") + V("i")), FR(N("1"), N("52"))) + N(f" {mm.MINUS} 1"))
-    b.equation(SUM(N("t = 1"), V("T"), FR(F_t, discounted(r_star))) + N(" = 0,   ") + N("TIR = ")
-               + SUP(PAR(N("1 + ") + r_star), FR(N("52"), N("12"))) + N(f" {mm.MINUS} 1"))
-    b.equation(N("ROI = ") + FR(SUM(N("t = 1"), V("T"), F_t), V("I")) + N(" = ")
-               + FR(V("Q") + N(f" {mm.CDOT} ") + V("m") + N(f" {mm.MINUS} ") + V("I"), V("I")))
-    b.equation(V("\u03c4") + N(" = min") + PAR(V("k") + N(" : ") + SUM(N("t = 1"), V("k"), F_t) + N(" \u2265 0"),
-                                               "{", "}"))
-    b.equation(SUB(V("Q"), N("VPL=0")) + N(" = ") + FR(
-        SUM(N("t = 1"), T_d, C_t + SUP(PAR(N("1 + ") + i_s), N(mm.MINUS) + V("t"))),
-        FR(V("m"), T_v) + SUM(V("t") + N(" = ") + T_d + N(" + 1"), V("T"),
-                              SUP(PAR(N("1 + ") + i_s), N(mm.MINUS) + V("t")))))
+    eq.add_equations(b, "pt")
     im = lambda fragment: (fragment,)  # noqa: E731
     b.math_para([
         "Nelas, ", im(V("p")), " é o preço líquido (R$ 199); ", im(SUB(V("c"), V("v"))), " o custo variável "
@@ -583,25 +566,30 @@ def _build(labels: dict[str, str]) -> Builder:
         "competência.",
         font=9,
     )
-    b.figure("fig_estrutura.png", "Estrutura do produto em três subsistemas; itens fabricados em vermelho e comprados em preto.",
-             width_cm=8.5, source="elaboração própria.")
+    b.figure("fig_estrutura.png", "Estrutura do produto em sistemas e itens, com o plano de processo que cobre cada "
+             "item; itens fabricados em vermelho e comprados em preto.", width_cm=15.0,
+             source=f"elaboração própria, no formato de estrutura do produto e planos de processo; itens da {R('bom')}.")
     b.heading("4.2 Plano macro do processo produtivo", 2)
+    b.para(
+        f"A {R('estrutura')} associa cada item a um plano de processo; a {R('macro')} detalha as operações de cada "
+        "plano, com o posto, o tempo e o controle."
+    )
     b.table(
-        "Plano macro do processo (sequência, posto, descrição e controle)",
-        ["Seq.", "Posto", "Descrição", "Tempo", "Controle"],
-        [["10", "Recebimento", "Receber a chapa e conferir o certificado", "Cronometrar em A5", "Lote e espessura"],
-         ["20", "Bancada", "Inspecionar o lote", "Cronometrar em A5", "Visual e dimensional"],
-         ["30", "Corte", "Fixar a chapa na mesa", "Cronometrar em A5", "Fixação sem folga"],
-         ["40", "Corte", "Cortar o perfil", "0,9 a 1,2 min [17][18]", "Dimensão externa"],
-         ["50", "Corte", "Usinar recortes e escala", "0,9 a 1,2 min [17][18]", "Geometria das funções"],
-         ["60", "Bancada", "Chanfrar e lixar, com proteção respiratória", "Cronometrar em A5", "Rugosidade e borda"],
-         ["70", "Bancada", "Limpar e inspecionar", "Cronometrar em A5", "Delaminação após o corte"],
-         ["80", "Gravação", "Gravar a identificação do lote", "Cronometrar em A5", "Rastreabilidade"],
-         ["90", "Embalagem", "Embalar", "Cronometrar em A5", "Proteção da borda"],
-         ["100", "Expedição", "Liberar o lote", "Cronometrar em A5", "Registro de inspeção"]],
-        [1.1, 2.2, 5.4, 3.3, 4.0],
-        "elaboração própria. Os tempos de corte são derivados de parâmetros "
-        "publicados (ver texto); os demais saem dos protótipos (A5) e dos testes (A6).",
+        "Plano macro do processo (operação, plano, posto, descrição, tempo e controle)",
+        ["Op.", "Plano", "Posto", "Descrição", "Tempo", "Controle"],
+        [["10", "PIR", "Recebimento", "Receber a chapa e conferir o certificado", "Cronometrar em A5", "Lote e espessura"],
+         ["20", "PIR", "Bancada", "Inspecionar o lote", "Cronometrar em A5", "Visual e dimensional"],
+         ["30", "PPF-1", "Corte", "Fixar a chapa na mesa", "Cronometrar em A5", "Fixação sem folga"],
+         ["40", "PPF-1", "Corte", "Cortar o perfil", "0,9 a 1,2 min [17][18]", "Dimensão externa"],
+         ["50", "PPF-1", "Corte", "Usinar recortes e escala", "0,9 a 1,2 min [17][18]", "Geometria das funções"],
+         ["60", "PPF-2", "Bancada", "Chanfrar e lixar, com proteção respiratória", "Cronometrar em A5", "Rugosidade e borda"],
+         ["70", "PPF-2", "Bancada", "Limpar e inspecionar", "Cronometrar em A5", "Delaminação após o corte"],
+         ["80", "PPF-3", "Gravação", "Gravar a identificação do lote", "Cronometrar em A5", "Rastreabilidade"],
+         ["90", "PPM", "Embalagem", "Embalar", "Cronometrar em A5", "Proteção da borda"],
+         ["100", "PPM", "Expedição", "Liberar o lote", "Cronometrar em A5", "Registro de inspeção"]],
+        [1.0, 1.5, 2.2, 5.0, 3.3, 3.0],
+        "elaboração própria. PIR: inspeção de recebimento; PPF: fabricação; PPM: montagem. Os tempos de corte são "
+        "derivados de parâmetros publicados (ver texto); os demais saem dos protótipos (A5) e dos testes (A6).",
         font=9,
     )
     b.para(
@@ -612,10 +600,18 @@ def _build(labels: dict[str, str]) -> Builder:
         "lote de 2.000. As etapas manuais não têm dado público e serão cronometradas no protótipo."
     )
     b.heading("4.3 Embalagem e análise de modos de falha", 2)
-    b.para(
-        "A embalagem segue as seis tarefas do Capítulo 8: envelope rígido para o correio, marcação de lote e "
-        "limites de uso, berço interno que protege a borda, caixa externa identificada e conferência do lote "
-        "em bancada."
+    b.table(
+        "Condições de embalagem (seis tarefas do Capítulo 8)",
+        ["Tarefa", "Condição adotada", "Item"],
+        [["Distribuição", "Envio pelos Correios em envelope rígido, a partir da base do grupo", "P7"],
+         ["Formas e marcações", "Lote, material, limites de uso e garantia impressos na caixa e no manual", "P8, P9"],
+         ["Elemento crítico", "A borda do cartão, que não pode lascar nem encostar em outros produtos", "P7"],
+         ["Adaptação", "Berço interno que mantém o cartão fixo e afastado de outros produtos", "P7"],
+         ["Projeto da embalagem", "Caixa externa identificada por lote", "P8"],
+         ["Processo", "Embalagem em bancada, com conferência do lote antes da expedição", "Operações 90 e 100"]],
+        [3.4, 9.2, 3.4],
+        "elaboração própria.",
+        font=9,
     )
     b.table(
         "Análise de modos e efeitos de falha (FMEA), pontuações hipotéticas",

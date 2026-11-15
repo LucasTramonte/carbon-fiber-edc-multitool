@@ -26,11 +26,11 @@ import numpy as np  # noqa: E402
 try:
     from src import project_plan as pp
     from src import reverse_logistics_model as rl
-    from src.reverse_flow_diagram import render_png
+    from src.reverse_flow_diagram import build_flows, render_png, to_dot
 except ImportError:  # pragma: no cover
     import project_plan as pp
     import reverse_logistics_model as rl
-    from reverse_flow_diagram import render_png
+    from reverse_flow_diagram import build_flows, render_png, to_dot
 
 ROOT = Path(__file__).resolve().parents[1]
 FIG_DIR = ROOT / "outputs" / "visualizations"
@@ -92,34 +92,6 @@ def block_diagram_dot() -> str:
   F1 -> F4 [style=dashed];
   F5 -> F3 [style=dotted, arrowhead=none];
   F5 -> F2 [style=dotted, arrowhead=none];
-}}
-"""
-
-
-def product_structure_dot() -> str:
-    """Cap. 8 style tree: fabricated items in red, purchased items in black."""
-    fab = f'fontcolor="{RED}"'
-    return f"""digraph estrutura {{
-  rankdir=LR;
-  {HEAD}
-  P [label="Cartão multitool", fillcolor="{DARK}", fontcolor=white];
-  S1 [label="S1 Corpo", fillcolor="{LIGHT}"];
-  S2 [label="S2 Funções", fillcolor="{LIGHT}"];
-  S3 [label="S3 Embalagem", fillcolor="{LIGHT}"];
-  C1 [label="P1 Chapa curada (CFRP)"];
-  C2 [label="P2 Cartão recortado\\ne usinado", {fab}];
-  C3 [label="P3 Chanfro e acabamento", {fab}];
-  C4 [label="P4 Hexágonos e recortes", {fab}];
-  C5 [label="P5 Escala gravada", {fab}];
-  C6 [label="P6 Gravação de lote", {fab}];
-  C7 [label="P7 Envelope ou berço"];
-  C8 [label="P8 Caixa externa"];
-  C9 [label="P9 Manual e etiqueta"];
-  P -> S1; P -> S2; P -> S3;
-  S1 -> C1; S1 -> C2; S1 -> C3;
-  S2 -> C4; S2 -> C5; S2 -> C6;
-  S3 -> C7; S3 -> C8; S3 -> C9;
-  L [shape=plaintext, style="", fontsize=11, label=<<table border="0" cellborder="0"><tr><td><font color="{RED}">vermelho: fabricado</font></td></tr><tr><td>preto: comprado</td></tr></table>>];
 }}
 """
 
@@ -197,8 +169,19 @@ def lifecycle_figure(path: Path) -> None:
     plt.close(fig)
 
 
-def gantt_scurve_figure(path: Path) -> None:
+GANTT_TEXT = {
+    "pt": {"budget": "orçamento: R$ 54 mil", "ylabel": "Custo (R$ mil)\nacumulado e semanal",
+           "title": "Cronograma-base e curva S", "xlabel": "Semana do projeto (S1 a S14)",
+           "legend": ("Caminho crítico", "Atividade com folga (A4: 1 semana)")},
+    "en": {"budget": "budget: R$ 54k", "ylabel": "Cost (R$ thousand)\ncumulative and weekly",
+           "title": "Baseline schedule and S-curve", "xlabel": "Project week (W1 to W14)",
+           "legend": ("Critical path", "Activity with slack (A4: 1 week)")},
+}
+
+
+def gantt_scurve_figure(path: Path, lang: str = "pt") -> None:
     """Cumulative cost (S-curve) above a Gantt, as in the cost-management lesson."""
+    text = GANTT_TEXT[lang]
     sched, base = pp.schedule(), pp.weekly_baseline()
     fig, (top, bottom) = plt.subplots(2, 1, figsize=(10, 6.6), sharex=True,
                                       gridspec_kw={"height_ratios": [1, 1.7]})
@@ -206,22 +189,22 @@ def gantt_scurve_figure(path: Path) -> None:
     top.bar(base["week"], base["cost_brl"] / 1000, color=GREY, alpha=0.6, width=0.6)
     top.axhline(pp.BUDGET / 1000, color=ORANGE, ls="--", lw=1)
     top.set_ylim(0, 62)
-    top.text(0.7, pp.BUDGET / 1000 + 2.2, "orçamento: R$ 54 mil", color=ORANGE, fontsize=9)
-    top.set_ylabel("Custo (R$ mil)\nacumulado e semanal", fontsize=9)
-    top.set_title("Cronograma-base e curva S", fontsize=11)
+    top.text(0.7, pp.BUDGET / 1000 + 2.2, text["budget"], color=ORANGE, fontsize=9)
+    top.set_ylabel(text["ylabel"], fontsize=9)
+    top.set_title(text["title"], fontsize=11)
     y = np.arange(len(sched))
     colors = [DARK if c else GREY for c in sched["critical"]]
     bottom.barh(y, sched["duration_weeks"], left=sched["start_week"] - 0.5, color=colors,
                 edgecolor=DARK, height=0.6)
-    bottom.set_yticks(y, [f"{r.id} · {r.activity}" for r in sched.itertuples()], fontsize=8)
+    names = {r.id: (r.activity if lang == "pt" else pp.ACTIVITY_NAMES_EN[r.id]) for r in sched.itertuples()}
+    bottom.set_yticks(y, [f"{ident} · {names[ident]}" for ident in sched["id"]], fontsize=8)
     bottom.invert_yaxis()
     bottom.set_xticks(range(1, 15))
     bottom.set_xlim(0.5, 14.5)
-    bottom.set_xlabel("Semana do projeto (S1 a S14)", fontsize=9)
+    bottom.set_xlabel(text["xlabel"], fontsize=9)
     bottom.grid(axis="x", alpha=0.3)
     handles = [plt.Rectangle((0, 0), 1, 1, fc=DARK), plt.Rectangle((0, 0), 1, 1, fc=GREY)]
-    bottom.legend(handles, ["Caminho crítico", "Atividade com folga (A4: 1 semana)"],
-                  loc="upper right", fontsize=8)
+    bottom.legend(handles, list(text["legend"]), loc="upper right", fontsize=8)
     fig.tight_layout()
     fig.savefig(path, dpi=180)
     plt.close(fig)
@@ -307,6 +290,147 @@ def break_even_figure(path: Path) -> None:
     plt.close(fig)
 
 
+STRUCTURE_TEXT = {
+    "pt": {
+        "headers": ("Produto", "Sistema (S)", "Itens", "Planos de processo"),
+        "product": "Cartão\nmultitool",
+        "fabricated": "Itens fabricados", "purchased": "Itens comprados",
+        "abbreviations": "S: sistema.  PIR: plano de inspeção de recebimento.  PPF: plano de processo de "
+                         "fabricação.  PPM: plano de processo de montagem.",
+        "systems": {"body": "S corpo", "functions": "S funções", "identification": "S identificação",
+                    "packaging": "S embalagem"},
+        "items": {"P1": "Chapa curada de fibra de carbono", "P2": "Cartão recortado e usinado",
+                  "P3": "Chanfro e acabamento", "P4": "Hexágonos e recortes", "P5": "Escala gravada",
+                  "P6": "Gravação de lote", "P7": "Envelope ou berço", "P8": "Caixa externa",
+                  "P9": "Manual e etiqueta"},
+        "plans": {"PIR": "Inspeção de recebimento\noperações 10 e 20", "PPF-1": "Corte e usinagem\noperações 30 a 50",
+                  "PPF-2": "Acabamento e inspeção\noperações 60 e 70", "PPF-3": "Gravação de lote\noperação 80",
+                  "PPM": "Embalagem e expedição\noperações 90 e 100"},
+    },
+    "en": {
+        "headers": ("Product", "System (S)", "Items", "Process plans"),
+        "product": "Multitool\ncard",
+        "fabricated": "Manufactured items", "purchased": "Purchased items",
+        "abbreviations": "S: system.  PIR: receiving inspection plan.  PPF: manufacturing process plan.  "
+                         "PPM: assembly process plan.",
+        "systems": {"body": "S body", "functions": "S functions", "identification": "S identification",
+                    "packaging": "S packaging"},
+        "items": {"P1": "Cured carbon-fibre sheet", "P2": "Cut and machined card", "P3": "Chamfer and finishing",
+                  "P4": "Hexagons and cutouts", "P5": "Engraved scale", "P6": "Lot marking", "P7": "Envelope or cradle",
+                  "P8": "Outer box", "P9": "Manual and label"},
+        "plans": {"PIR": "Receiving inspection\noperations 10 and 20", "PPF-1": "Cutting and machining\noperations 30 to 50",
+                  "PPF-2": "Finishing and inspection\noperations 60 and 70", "PPF-3": "Lot marking\noperation 80",
+                  "PPM": "Packing and dispatch\noperations 90 and 100"},
+    },
+}
+
+# system -> items (code, manufactured?, process plan)
+STRUCTURE = (
+    ("body", (("P1", False, "PIR"), ("P2", True, "PPF-1"))),
+    ("functions", (("P4", True, "PPF-1"), ("P5", True, "PPF-1"), ("P3", True, "PPF-2"))),
+    ("identification", (("P6", True, "PPF-3"),)),
+    ("packaging", (("P7", False, "PPM"), ("P8", False, "PPM"), ("P9", False, "PPM"))),
+)
+PLAN_STYLE = {"PIR": ("#fde7c8", "#e65100", "#4e342e"), "PPF-1": ("#cfe8ea", "#00796b", "#004d40"),
+              "PPF-2": ("#cfe8ea", "#00796b", "#004d40"), "PPF-3": ("#cfe8ea", "#00796b", "#004d40"),
+              "PPM": ("#e53935", "#b71c1c", "#ffffff")}
+
+
+def _document_icon(ax, x: float, y: float, label: str, style: tuple[str, str, str]) -> None:
+    """A page with a folded corner, as in the course example, labelled with the plan code."""
+    fill, edge, ink = style
+    w, h, fold = 7.6, 7.2, 1.9
+    ax.add_patch(plt.Polygon([(x, y - h / 2), (x + w - fold, y - h / 2), (x + w, y - h / 2 + fold),
+                              (x + w, y + h / 2), (x, y + h / 2)], closed=True, fc=fill, ec=edge, lw=1.2))
+    ax.add_patch(plt.Polygon([(x + w - fold, y - h / 2), (x + w - fold, y - h / 2 + fold), (x + w, y - h / 2 + fold)],
+                             closed=True, fc="white", ec=edge, lw=0.8))
+    ax.text(x + w / 2, y + 0.9, label, ha="center", va="center", fontsize=6.8, fontweight="bold", color=ink)
+
+
+def product_structure_figure(path: Path, lang: str = "pt") -> None:
+    """Product breakdown in the style of the course example (Cap. 8): product, systems, items (fabricated in
+    red, purchased in black) and, at the right, the process plan that covers each item."""
+    text = STRUCTURE_TEXT[lang]
+    row, pad, gap = 5.0, 1.3, 3.4
+    fig, ax = plt.subplots(figsize=(9.0, 7.2))
+    ax.set_xlim(0, 100)
+    ax.set_ylim(80.0, -2)
+    ax.axis("off")
+    columns = {"product": (0.5, 10.5), "system": (15.5, 15.5), "items": (36.0, 32.0)}
+    for (name, (x, w)), header in zip(columns.items(), text["headers"][:3]):
+        ax.text(x + w / 2, -0.4, header, ha="center", va="center", fontsize=9.5, fontweight="bold", color=DARK)
+    ax.text(79.0, -0.4, text["headers"][3], ha="center", va="center", fontsize=9.5, fontweight="bold", color=DARK)
+
+    y = 3.0
+    centres, item_y = [], {}
+    boxes = []
+    for system, items in STRUCTURE:
+        height = len(items) * row + 2 * pad
+        boxes.append((system, items, y, height))
+        centres.append(y + height / 2)
+        for k, (code, _, _) in enumerate(items):
+            item_y[code] = y + pad + row * (k + 0.5)
+        y += height + gap
+    middle = (centres[0] + centres[-1]) / 2
+
+    px, pw = columns["product"]
+    ax.add_patch(plt.Rectangle((px, middle - 5), pw, 10, fc=DARK, ec=DARK))
+    ax.text(px + pw / 2, middle, text["product"], ha="center", va="center", fontsize=9.5, color="white",
+            fontweight="bold")
+    spine = px + pw + 2.2
+    ax.plot([px + pw, spine], [middle, middle], color=DARK, lw=1.1)
+    ax.plot([spine, spine], [centres[0], centres[-1]], color=DARK, lw=1.1)
+    sx, sw = columns["system"]
+    ix, iw = columns["items"]
+    for (system, items, top, height), centre in zip(boxes, centres):
+        ax.plot([spine, sx], [centre, centre], color=DARK, lw=1.1)
+        ax.add_patch(plt.Rectangle((sx, centre - 3.1), sw, 6.2, fc="white", ec=DARK, lw=1.2))
+        ax.text(sx + sw / 2, centre, text["systems"][system], ha="center", va="center", fontsize=9.5,
+                fontweight="bold", color=DARK)
+        ax.plot([sx + sw, ix], [centre, centre], color=DARK, lw=1.1)
+        ax.add_patch(plt.Rectangle((ix, top), iw, height, fc="white", ec=DARK, lw=1.2))
+        for k, (code, made, _) in enumerate(items):
+            ax.text(ix + 1.4, item_y[code], f"{code}  {text['items'][code]}", ha="left", va="center", fontsize=8.6,
+                    color=RED if made else "black")
+
+    # process plans: one icon per plan, at the mean height of the items it covers
+    plans: dict[str, list[float]] = {}
+    for _, items in STRUCTURE:
+        for code, _, plan in items:
+            plans.setdefault(plan, []).append(item_y[code])
+    bus = ix + iw + 2.4
+    icon_x = 73.0
+    for plan, ys in plans.items():
+        target = sum(ys) / len(ys)
+        for yy in ys:
+            ax.plot([ix + iw, bus, bus, icon_x], [yy, yy, target, target], color=GREY, lw=1.0, solid_joinstyle="round")
+        _document_icon(ax, icon_x, target, plan, PLAN_STYLE[plan])
+        ax.text(icon_x + 9.4, target, text["plans"][plan], ha="left", va="center", fontsize=7.6, color=DARK)
+
+    legend_y = 73.0
+    ax.add_patch(plt.Rectangle((0.5, legend_y - 1.7), 5.5, 3.4, fc="white", ec=RED, lw=1.4))
+    ax.text(7.2, legend_y, text["fabricated"], ha="left", va="center", fontsize=8.4, color=RED)
+    ax.add_patch(plt.Rectangle((26.0, legend_y - 1.7), 5.5, 3.4, fc="white", ec="black", lw=1.4))
+    ax.text(32.7, legend_y, text["purchased"], ha="left", va="center", fontsize=8.4)
+    ax.text(0.5, legend_y + 4.2, text["abbreviations"], ha="left", va="center", fontsize=7.6, color=DARK)
+    fig.tight_layout(pad=0.4)
+    fig.savefig(path, dpi=190)
+    plt.close(fig)
+
+
+ORG_LABELS_EN = {
+    "SP": "Sponsor (lecturer)\napproves the charter and the phases",
+    "GP": "Project manager (student)\nschedule, cost and risks",
+    "EQ": "Project team\nrequirements and tests\nA1, A2, A6, A9",
+    "PJ": "Designer\nCAD and tolerances\nA3",
+    "CP": "Purchasing\nsheet and machining\nA4",
+    "PD": "Production and quality\nprocess and inspection\nA7",
+    "MK": "Marketing and service\nsales and take-back\nA8",
+    "FO": "Suppliers\nsheet and machining\nA4, A5",
+    "US": "Users and customers\ntests and purchase\nA1, A6, A8",
+    "CR": "Post office and recycler\nreverse freight and disposal\nA8, A9",
+}
+
 ORG_LABELS = {
     "SP": "Patrocinador (docente)\naprova a minuta e as fases",
     "GP": "Gerente do projeto (discente)\nprazo, custo e riscos",
@@ -321,9 +445,10 @@ ORG_LABELS = {
 }
 
 
-def org_chart_dot() -> str:
+def org_chart_dot(lang: str = "pt") -> str:
     """Project organogram (Cap. 5): hierarchy, roles and the activities each one answers for."""
-    q = {key: _q(text) for key, text in ORG_LABELS.items()}
+    q = {key: _q(text) for key, text in (ORG_LABELS if lang == "pt" else ORG_LABELS_EN).items()}
+    external = "Interessados externos" if lang == "pt" else "External stakeholders"
     return f"""digraph organograma {{
   rankdir=TB;
   {HEAD}
@@ -335,7 +460,7 @@ def org_chart_dot() -> str:
   PD [label="{q['PD']}"];
   MK [label="{q['MK']}"];
   subgraph cluster_ext {{
-    label="Interessados externos"; style="dashed"; color="{GREY}"; fontsize=11;
+    label="{external}"; style="dashed"; color="{GREY}"; fontsize=11;
     FO [label="{q['FO']}", fillcolor="#fafafa"];
     US [label="{q['US']}", fillcolor="#fafafa"];
     CR [label="{q['CR']}", fillcolor="#fafafa"];
@@ -439,7 +564,6 @@ def viability_figure(path: Path, lang: str = "pt") -> None:
 DOT_FIGURES = {
     "fig_eap.png": wbs_dot,
     "fig_blocos.png": block_diagram_dot,
-    "fig_estrutura.png": product_structure_dot,
     "fig_lancamento.png": launch_dependency_dot,
     "fig_rede.png": network_dot,
     "fig_organograma.png": org_chart_dot,
@@ -452,10 +576,16 @@ def render_all(out_dir: Path = FIG_DIR) -> dict[str, bool]:
     status = {name: render_png(builder(), out_dir / name) for name, builder in DOT_FIGURES.items()}
     lifecycle_figure(out_dir / "fig_ciclo_vida.png")
     gantt_scurve_figure(out_dir / "fig_gantt_curva_s.png")
+    gantt_scurve_figure(out_dir / "gantt_en.png", lang="en")
     card_sketch_figure(out_dir / "fig_croqui.png")
     regional_income_figure(out_dir / "fig_renda_regional.png")
     break_even_figure(out_dir / "fig_equilibrio.png")
     viability_figure(out_dir / "fig_viabilidade.png")
+    product_structure_figure(out_dir / "fig_estrutura.png")
+    product_structure_figure(out_dir / "product_structure_en.png", lang="en")
+    status["org_chart_en"] = render_png(org_chart_dot("en"), out_dir / "org_chart_en.png")
+    status["reverse_flow_en"] = render_png(to_dot(build_flows(rl.load_assumptions(), "en")["fim_de_vida"]),
+                                           out_dir / "reverse_flow_en.png")
     viability_figure(out_dir / "viability_chart_en.png", lang="en")
     return status
 

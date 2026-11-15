@@ -77,25 +77,77 @@ PORTER: tuple[tuple[str, int, str], ...] = (
 
 LEVELS = {1: "muito baixa", 2: "baixa", 3: "média", 4: "alta", 5: "muito alta"}
 
+# English edition of the same analysis (same structure, same scores)
+SWOT_EN: dict[str, tuple[str, ...]] = {
+    "STRENGTHS": (
+        "Card shape and light material (carbon fibre), with built-in functions and a chamfer to open packages",
+        "Single piece with no moving parts: light, thin and discreet",
+        "Concept chosen by objective criteria, with safety as the priority",
+        "Low initial investment and lean structure",
+        "Own online sales, with control of margin and experience",
+    ),
+    "WEAKNESSES": (
+        "Edge strength and safety not yet proven in testing",
+        "Dependence on sheet suppliers and outsourced machining",
+        "End-of-life cost high relative to the project reserve",
+        "Little information on prices in reais and on the audience",
+        "Product cannot be remanufactured; recycling still uncertain",
+    ),
+    "OPPORTUNITIES": (
+        "Regions with larger population and income concentrated in the Southeast and South",
+        "EDC and urban cycling niches with few carbon-fibre cards on offer",
+        "Advance of cold cutting and on-demand manufacturing",
+        "Marketplaces with existing traffic",
+        "Voluntary reverse logistics as an environmental differentiator",
+    ),
+    "THREATS": (
+        "Established metal brands, with long warranties and recognition",
+        "Ease of imitation by new competitors",
+        "Failures such as delamination or sharp edges can cause complaints and brand damage",
+        "Supplier delays and few options for waste disposal in the country",
+        "Possible restrictions on carrying tools on flights",
+    ),
+}
+
+PORTER_EN: tuple[tuple[str, int, str], ...] = (
+    ("Threat of new entrants", 4,
+     "Single piece, no moving parts, outsourced machining and online sales; low investment (R$ 54,000) and "
+     "easy imitation."),
+    ("Bargaining power of suppliers", 4,
+     "Cured sheet and machining add up to 44% of the cost (R$ 24,000); cold cutting is specialised and only one "
+     "recycler of cured composite is known in Brazil."),
+    ("Threat of substitutes", 4,
+     "Pocket knives, loose hex keys, bicycle multitools and box cutters do the same tasks, often at a lower price."),
+    ("Rivalry among competitors", 3,
+     "Established metal brands (Leatherman, Victorinox, Wallet Ninja) and one direct carbon-fibre competitor in "
+     "the CR80 format (Touch of Ginger), discontinued at one store."),
+    ("Bargaining power of buyers", 3,
+     "End customers are scattered, with little individual power; but switching cost is nil and marketplaces make "
+     "it easy to compare with the base price of R$ 199."),
+)
+LEVELS_EN = {1: "very low", 2: "low", 3: "medium", 4: "high", 5: "very high"}
+
 
 def porter_mean() -> float:
     """Average intensity of the five forces."""
     return sum(score for _, score, _ in PORTER) / len(PORTER)
 
 
-def porter_level(mean: float) -> str:
+def porter_level(mean: float, lang: str = "pt") -> str:
     """Verbal reading of the mean, as used in the report text."""
+    words = {"pt": ("alta", "média-alta", "média", "baixa"), "en": ("high", "medium-high", "medium", "low")}[lang]
     if mean >= 4.0:
-        return "alta"
+        return words[0]
     if mean >= 3.5:
-        return "média-alta"
+        return words[1]
     if mean >= 2.5:
-        return "média"
-    return "baixa"
+        return words[2]
+    return words[3]
 
 
-def _decimal(value: float) -> str:
-    return f"{value:.1f}".replace(".", ",")
+def _decimal(value: float, lang: str = "pt") -> str:
+    text = f"{value:.1f}"
+    return text.replace(".", ",") if lang == "pt" else text
 
 
 # -------------------------------------------------------------------- figures
@@ -141,24 +193,26 @@ def swot_figure(path: Path | None = None) -> Path:
     return path
 
 
-def porter_figure(path: Path | None = None) -> Path:
+def porter_figure(path: Path | None = None, lang: str = "pt") -> Path:
     """Horizontal bars with the intensity of each force and the mean as a reference line."""
-    path = path or FIG_DIR / "fig_porter.png"
+    forces, levels = (PORTER, LEVELS) if lang == "pt" else (PORTER_EN, LEVELS_EN)
+    mean_label, x_label = ("Média", "Intensidade da força (escala de 1 a 5)") if lang == "pt" else ("Mean", "Intensity of the force (scale from 1 to 5)")
+    path = path or FIG_DIR / ("fig_porter.png" if lang == "pt" else "porter_chart_en.png")
     path.parent.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(9, 3.9))
-    names = [name for name, _, _ in PORTER][::-1]
-    scores = [score for _, score, _ in PORTER][::-1]
+    names = [name for name, _, _ in forces][::-1]
+    scores = [score for _, score, _ in forces][::-1]
     ax.barh(names, scores, color="#2b78d4", height=0.55)
     mean = porter_mean()
     ax.axvline(mean, color="#444444", linestyle="--", linewidth=1.6)
-    ax.text(mean, len(PORTER) - 0.38, f"Média: {_decimal(mean)}", ha="center", va="bottom", fontsize=10,
+    ax.text(mean, len(forces) - 0.38, f"{mean_label}: {_decimal(mean, lang)}", ha="center", va="bottom", fontsize=10,
             color="#444444")
     for i, score in enumerate(scores):
-        ax.text(4.3, i, f"{score} ({LEVELS[score]})", va="center", fontsize=10)  # aligned, clear of the bars
+        ax.text(4.3, i, f"{score} ({levels[score]})", va="center", fontsize=10)  # aligned, clear of the bars
     ax.set_xlim(0, 5.6)
     ax.set_xticks(range(1, 6))
-    ax.set_xticklabels([f"{k}\n{LEVELS[k]}" for k in range(1, 6)], fontsize=9, color="#444444")
-    ax.set_xlabel("Intensidade da força (escala de 1 a 5)", fontsize=10, color="#444444")
+    ax.set_xticklabels([f"{k}\n{levels[k]}" for k in range(1, 6)], fontsize=9, color="#444444")
+    ax.set_xlabel(x_label, fontsize=10, color="#444444")
     ax.grid(axis="x", color="#e3e3e3")
     ax.set_axisbelow(True)
     for side in ("top", "right", "left"):
@@ -171,7 +225,7 @@ def porter_figure(path: Path | None = None) -> Path:
 
 def render_all() -> list[Path]:
     """Both figures used by the report."""
-    return [swot_figure(), porter_figure()]
+    return [swot_figure(), porter_figure(), porter_figure(lang="en")]
 
 
 if __name__ == "__main__":
