@@ -100,12 +100,10 @@ def build_report() -> Builder:
     b.para(
         "Este relatório planeja o desenvolvimento, o lançamento e a descontinuidade de um cartão multitool "
         "plano, no formato CR80, em fibra de carbono, para usuários de carregamento cotidiano (EDC, do inglês "
-        "everyday carry) e ciclistas urbanos. As seções seguem as normas do trabalho e os capítulos 4, 5, 7, 8, "
-        "10 e 12 da disciplina, com análise SWOT e das cinco forças de Porter. Os números vêm de modelos reproduzíveis com premissas rotuladas como observadas, "
-        f"derivadas ou hipotéticas. O projeto custa {brl(pp.BUDGET, 0)} em {int(sched['end_week'].max())} semanas, "
+        "everyday carry) e ciclistas urbanos. "
+        f"O projeto custa {brl(pp.BUDGET, 0)} em {int(sched['end_week'].max())} semanas, "
         f"com reserva de {brl(pp.RESERVE, 0)}. O recolhimento de fim de vida é viável por postagem reversa, com "
-        "benefício modesto ao cliente; a remanufatura do cartão não é viável. A Seção 7 conclui e lista as "
-        "informações que ainda faltam para validar o projeto."
+        "benefício modesto ao cliente; a remanufatura do cartão não é viável."
     )
 
     # ------------------------------------------------------------- 1
@@ -568,7 +566,7 @@ def build_report() -> Builder:
     b.para(
         f"O recolhimento é considerado encerrado quando forem recebidas {pct(mid)} das unidades vendidas "
         f"({br(p['lot_units'] * mid)} cartões do lote de {br(p['lot_units'])}) ou {br(p['horizon_months'])} meses "
-        "após o fim das vendas, o que ocorrer primeiro, com revisão aos 12 meses. O fluxo completo está na Figura A.1; a Figura 10 "
+        "após o fim das vendas, o que ocorrer primeiro, com revisão aos 12 meses. A Figura 10 "
         "e a Tabela 19 mostram dependências, prazos e custos."
     )
     b.figure("reverse_flow_fase.png", "Dependência entre as atividades da fase de descontinuidade.", width_cm=15.0,
@@ -605,33 +603,7 @@ def build_report() -> Builder:
     )
     b.para(
         "No fim de vida, recomenda-se o recolhimento por postagem reversa, voluntário (o produto não consta do "
-        "art. 33 da Lei 12.305 [5]), com custo pago pela margem das vendas. A Tabela 20 lista as informações "
-        "que ainda faltam para validar o projeto e a atividade em que cada uma será obtida."
-    )
-    b.table(
-        "Informações que ainda faltam para validar o projeto",
-        ["Informação", "O que já se sabe", "O que falta"],
-        [["Preço da chapa de 500 × 500 × 2 mm (chapa e usinagem somam R$ 24 mil, 44% do custo)",
-          "No varejo europeu: € 136,07 por chapa com IVA e € 111,58 em compras de 25 a 99 unidades [21]",
-          "Cotação nacional em reais, com frete e impostos (A4 e A5)"],
-         ["Tempo de cada operação", "Corte: 0,9 a 1,2 min por operação, calculado com parâmetros publicados [17][18]",
-          "Tempos das etapas manuais, medidos no protótipo (A5)"],
-         ["Preço dos concorrentes", "Wallet Ninja (US$ 20) e Leatherman Micra (US$ 49,95) [19][20]",
-          "Preço da Victorinox SwissCard e preços em reais (A1)"],
-         ["Obrigatoriedade do recolhimento (Lei 12.305)", "O produto não consta da lista do art. 33 [5]",
-          "Parecer jurídico, sobretudo se o cartão tiver chip eletrônico"],
-         ["Taxas de mão de obra, licença de CAD e bancada de ensaio", "Valores internos, sem fonte pública",
-          "Definir com a instituição (A1 e A3)"],
-         ["Origem do limite de R$ 60 mil", "Sem fonte pública", "Confirmar com o gerente do projeto"],
-         ["Utilidade percebida e pesos das matrizes", "Sem dado ainda",
-          "Entrevistas, teste de conceito e teste de uso (A1 e A6)"],
-         ["Segurança e vida útil", "Sem dado ainda", "Ensaios de torque, borda e delaminação (A6)"],
-         ["Frete reverso dos Correios (até 300 g)", "O preço depende de contrato e dos CEPs de origem e destino [8][9]",
-          "Contrato ou simulador (A7)"],
-         ["Destino dos retalhos e dos cartões devolvidos", "Sem resposta ainda do reciclador",
-          "Aceite, lote mínimo, preço por kg e licença do reciclador; laudo do resíduo (A7)"]],
-        [5.2, 5.8, 5.0],
-        "elaboração própria. Preços consultados em 11 nov. 2026.",
+        "art. 33 da Lei 12.305 [5]), com custo pago pela margem das vendas."
     )
 
     # ------------------------------------------------------------- referências
@@ -657,15 +629,12 @@ def build_report() -> Builder:
         "[18] CNC-STEP. Milling, drilling and cutting carbon fiber sheets. https://www.cnc-step.com/milling-drilling-cutting-carbon-fiber-sheets/. Acesso em 11 nov. 2026.",
         "[19] WALLET NINJA. Página oficial do produto. https://walletninja.com/. Acesso em 11 nov. 2026.",
         "[20] LEATHERMAN. Micra. https://www.leatherman.com/collections/bestsellers/products/micra. Acesso em 11 nov. 2026.",
-        "[21] CARBONWEBSHOP. Carbon Panel 500x500x2mm. https://www.carbonwebshop.com/carbon-fiber-sheets/standard/carbon-panel-500x500x2mm/. Acesso em 11 nov. 2026.",
     ]
     for ref_text in refs:
         b.small(ref_text, 9.5, left=True)
 
     # ------------------------------------------------------------- apêndices
     b.appendix("A", "Detalhamento da Seção 6")
-    b.figure("reverse_flow.png", "Fluxo de fim de vida: triagem, estoque por lote e destinação; os retalhos de usinagem entram "
-             "no mesmo estoque do material devolvido.", width_cm=9.0, source="elaboração própria.")
     brows = [[labels_pt[r.option], brl(r.cost_per_return_brl), br(r.custo, 2), br(r.estimulo), br(r.simplicidade),
               br(r.mensagem), br(r.recompra), br(r.weighted_score, 2)]
              for r in benefit.itertuples() for labels_pt in [{
@@ -730,7 +699,7 @@ def build_report() -> Builder:
         ["Agências dos Correios e lojas de bicicleta por UF", "Sem fonte pública", "Bases oficiais"],
     ]
     b.table("Natureza dos dados", ["Dado", "Natureza"], [r[:2] for r in rows_c],
-            [11.6, 4.4], "elaboração própria. Como cada dado será fechado: Tabela 20.", font=9)
+            [11.6, 4.4], "elaboração própria.", font=9)
     return b
 
 
