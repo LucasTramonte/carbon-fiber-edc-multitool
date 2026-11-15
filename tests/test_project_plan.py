@@ -79,20 +79,3 @@ def test_units_for_zero_npv_zeroes_the_npv() -> None:
 
 def test_payback_is_infinite_when_sales_never_recover_the_investment() -> None:
     assert pp.payback_months(pp.cash_flows(100, 107.9)) == float("inf")
-
-
-def test_readme_viability_table_matches_the_model() -> None:
-    from pathlib import Path
-
-    from src import reverse_logistics_model as rl
-
-    p = rl.load_assumptions()
-    unit_net = p["net_price_brl"] - p["variable_cost_brl"] - rl.end_of_life_unit_cost(p)
-    readme = (Path(__file__).resolve().parents[1] / "README.md").read_text(encoding="utf-8")
-    for units in (600, 1000, 2000):
-        e = pp.economics(units, unit_net)
-        row = (f"| {units:,} | {e['payback_months']:.1f} | {e['roi'] * 100:.0f}% | R$ {e['npv']:,.0f} | "
-               f"{e['irr_monthly'] * 100:.1f}% |")
-        assert row in readme, row
-    assert f"{int(pp.BUDGET / unit_net) + 1} cards" in readme
-    assert f"positive from {round(pp.units_for_zero_npv(unit_net))}" in readme

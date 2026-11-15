@@ -52,7 +52,43 @@ def concept_winner_range() -> tuple[float, float, bool]:
     return 0.20, 0.40, wins
 
 
+LABEL_MAP = {
+    "tables": {
+        "Planejamento estratégico do produto": "strat", "Concorrentes de referência": "compet",
+        "Fontes de informação": "fontes", "Intensidade das cinco forças": "porter", "Termo de abertura": "charter",
+        "Escopo do produto": "escopo", "Atividades, precedências e custos": "atividades", "Custo padrão": "custos",
+        "Viabilidade econômica por volume": "viab", "Matriz morfológica": "morf",
+        "Atividades da fase de descontinuidade": "fase_ativ",
+    },
+    "figures": {
+        "fig_organograma.png": "org", "fig_eap.png": "eap", "fig_viabilidade.png": "viab_fig",
+        "reverse_flow_fase.png": "fase_fig", "fig_porter.png": "porter_fig",
+    },
+    "headings": {
+        "Inovação e tecnologia": "s_inov", "Mercado e coleta de informações": "s_mercado",
+        "Análise do ambiente": "s_swot", "Planejamento do projeto": "s_proj", "Viabilidade econômica": "s_viab",
+        "Plano macro do processo produtivo": "s_macro", "Lançamento do produto": "s_lanc",
+        "Atendimento ao cliente e assistência": "s_atend", "Descontinuidade do produto": "s_desc",
+    },
+}
+
+
 def build_report() -> Builder:
+    """Build the report in two passes: the first numbers every table, figure and section, the second writes
+    the text with those numbers, so no cross-reference is typed by hand."""
+    first = _build({})
+    return _build(first.labels)
+
+
+def _build(labels: dict[str, str]) -> Builder:
+    def R(key: str) -> str:
+        """Label of a table, figure or section (``Tabela 3``, ``Figura A.1``, ``Seção 1.2``)."""
+        return labels.get(key, "?")
+
+    def num(key: str) -> str:
+        """Number of a section, without the word."""
+        return R(key).split()[-1]
+
     p = rl.load_assumptions()
     sched, costs, base = pp.schedule(), pp.cost_table(), pp.weekly_baseline()
     se_s_share = rl.southeast_south_population_share()
@@ -91,7 +127,7 @@ def build_report() -> Builder:
     s4 = base.loc[base["week"] == 4, "cumulative_brl"].item() / pp.BUDGET
     critical = " → ".join(pp.critical_path())
 
-    b = Builder()
+    b = Builder(label_map=LABEL_MAP)
     b.cover("CARTÃO MULTITOOL EM FIBRA DE CARBONO", "Relatório de Desenvolvimento de Produto: ER801A", load_team())
 
     # ----------------------------------------------------------- Resumo
@@ -109,7 +145,7 @@ def build_report() -> Builder:
     b.heading("1. Planejamento estratégico do produto", 1)
     b.heading("1.1 Posicionamento da empresa", 2)
     b.para(
-        "A Tabela 1 responde, nesta ordem, às sete perguntas do roteiro de planejamento estratégico do "
+        f"A {R('strat')} responde, nesta ordem, às sete perguntas do roteiro de planejamento estratégico do "
         "Capítulo 4. Missão, posicionamento e competências são propostas do grupo; mercado e "
         "recursos usam dados do projeto."
     )
@@ -124,11 +160,11 @@ def build_report() -> Builder:
              "O alvo inicial são os de renda acima de 2 salários mínimos.", "Derivada"],
             ["Tendências tecnológicas", "Corte de compósitos por fresagem CNC, jato d'água abrasivo ou laser, "
              "este com zona afetada pelo calor [21]; cartões multiferramenta patenteados desde 1993, nenhum em "
-             "fibra de carbono (Seção 1.2).", "Observada"],
+             f"fibra de carbono ({R('s_inov')}).", "Observada"],
             ["Posicionamento", "Seguidor diferenciado: já existe um cartão de fibra de carbono com chaves "
-             "sextavadas (Tabela 2). Compete por borda segura comprovada em ensaio, abertura de embalagens e "
+             f"sextavadas ({R('compet')}). Compete por borda segura comprovada em ensaio, abertura de embalagens e "
              "serviço de recolhimento, e não por custo.", "Proposta"],
-            ["Metas", f"ROI, VPL, TIR e participação de mercado (Tabela 9): vender 1.000 cartões em 12 meses; "
+            ["Metas", f"ROI, VPL, TIR e participação de mercado ({R('viab')}): vender 1.000 cartões em 12 meses; "
              f"equilíbrio em {break_even_total} cartões. Sem meta de participação: não há dado público do "
              "tamanho do mercado.", "Derivada"],
             ["Competências", "Projeto em CAD, inspeção dimensional, atendimento e venda digital; usinagem "
@@ -179,11 +215,11 @@ def build_report() -> Builder:
     b.para(
         "Os concorrentes custam de US$ 15 a 50, muito menos que R$ 199, e o TOG09 já oferece fibra de carbono "
         "e chaves sextavadas por menos de US$ 20: o cartão só se sustenta por diferenciação comprovada, o que o "
-        "experimento de preço (Seção 1.4) deve testar."
+        f"experimento de preço ({R('s_mercado')}) deve testar."
     )
     b.heading("1.4 Mercado e coleta de informações", 2)
     b.para(
-        "A Tabela 3 organiza as fontes pela tipologia do Capítulo 4."
+        f"A {R('fontes')} organiza as fontes pela tipologia do Capítulo 4."
     )
     b.table(
         "Fontes de informação de mercado e de tecnologia (tipologia do Capítulo 4)",
@@ -197,9 +233,9 @@ def build_report() -> Builder:
          ["Secundária, dados padronizados", "Relatórios setoriais de mercado [26]",
           "Sem dado público do mercado de multitools de bolso; só de multiferramentas industriais."],
          ["Secundária, registros internos", "Assistência, devoluções e defeitos",
-          "Inexistente: o produto ainda não foi vendido; os registros nascem no piloto (Seção 5.2)."],
+          f"Inexistente: o produto ainda não foi vendido; os registros nascem no piloto ({R('s_atend')})."],
          ["Tecnológica", "Patentes e produtos concorrentes [22] a [25]",
-          "Coletada: três documentos e um concorrente direto (Seção 1.2)."],
+          f"Coletada: três documentos e um concorrente direto ({R('s_inov')})."],
          ["Primária, qualitativa", "20 a 30 entrevistas individuais", "Planejada na atividade A1."],
          ["Primária, quantitativa", "Enquete com 100 a 150 respostas, cotas por região",
           "Planejada: margem de erro de 8 a 10 pontos percentuais [27]."],
@@ -233,7 +269,7 @@ def build_report() -> Builder:
     b.para(
         "A principal força, a combinação de forma e material, é também o ponto mais exposto: a arquitetura "
         "simples e a usinagem terceirizável facilitam a imitação, e já existe um cartão de fibra de carbono com "
-        "chaves sextavadas (Tabela 2)."
+        f"chaves sextavadas ({R('compet')})."
     )
     mean_force = sa.porter_mean()
     b.table(
@@ -246,11 +282,11 @@ def build_report() -> Builder:
         bold_rows=(5,), right_cols=(1,),
     )
     b.para(
-        f"A média de {br(mean_force, 1)} (Figura A.1) indica pressão competitiva {sa.porter_level(mean_force)}. As três forças "
+        f"A média de {br(mean_force, 1)} ({R('porter_fig')}) indica pressão competitiva {sa.porter_level(mean_force)}. As três forças "
         "mais intensas (novos entrantes, fornecedores e substitutos) mostram que o produto não deve competir por "
         "preço: a defesa está na diferenciação comprovada por ensaio, na construção de marca no nicho EDC e "
         "ciclista e na negociação com mais de um fornecedor de chapa e de usinagem, coerente com o "
-        "posicionamento por diferenciação da Tabela 1."
+        f"posicionamento por diferenciação da {R('strat')}."
     )
 
     # ------------------------------------------------------------- 2
@@ -259,11 +295,12 @@ def build_report() -> Builder:
     b.figure("fig_organograma.png", "Organograma do projeto: funções, hierarquia e atividades de cada interessado.",
              width_cm=14.5, source="elaboração própria.")
     b.para(
-        "A Figura 2 mostra a hierarquia do projeto e as atividades (A1 a A9, Figura 3) de cada função. As "
+        f"A {R('org')} mostra a hierarquia do projeto e as atividades (A1 a A9, {R('eap')}) de cada função. As "
         "funções internas são exercidas pelos três discentes; o gerente é designado pelo grupo."
     )
     b.heading("2.2 Escopo do produto e do projeto", 2)
-    b.para("A Tabela 5 segue os campos do modelo do Capítulo 5 para a declaração do escopo do projeto; a Tabela 6 detalha o escopo do produto.")
+    b.para(f"A {R('charter')} segue os campos do modelo do Capítulo 5 para a declaração do escopo do projeto; a "
+           f"{R('escopo')} detalha o escopo do produto.")
     b.table(
         "Termo de abertura do projeto",
         ["Campo", "Conteúdo"],
@@ -276,12 +313,12 @@ def build_report() -> Builder:
              "afirmação de demanda."],
             ["Prazo e custo", f"{int(sched['end_week'].max())} semanas; {brl(pp.BUDGET, 0)} mais reserva de "
              f"{brl(pp.RESERVE, 0)} (limite de {brl(pp.BUDGET + pp.RESERVE, 0)}, definido pelo grupo)."],
-            ["Escopo do produto", "Funções e parâmetros da Tabela 6."],
-            ["Escopo do projeto", "Entregas 1.0 a 7.0 da Figura 3. Fora do escopo: certificação de segurança ou "
+            ["Escopo do produto", f"Funções e parâmetros da {R('escopo')}."],
+            ["Escopo do projeto", f"Entregas 1.0 a 7.0 da {R('eap')}. Fora do escopo: certificação de segurança ou "
              "de transporte aéreo e produção em escala."],
             ["Premissas", "Chapa curada disponível; corte por jato d'água ou CNC; venda inicial digital."],
             ["Restrições", "Segurança das bordas, custo, espessura de carteira, capacidade de usinagem."],
-            ["Equipe", "Três discentes, com as funções da Figura 2."],
+            ["Equipe", f"Três discentes, com as funções da {R('org')}."],
             ["Riscos", "Delaminação, baixa utilidade percebida, custo alto, atraso de fornecedor e rejeição "
              "em inspeção."],
             ["Aprovações", "Avanço de fase só com requisitos aprovados, protótipo funcional e ensaios sem "
@@ -312,10 +349,10 @@ def build_report() -> Builder:
              width_cm=12.5, source="elaboração própria.")
     b.heading("2.4 Atividades, precedências e custos", 2)
     b.para(
-        "A Tabela 7 reproduz o formato da planilha do professor (ID, atividade, início, duração, término, "
+        f"A {R('atividades')} reproduz o formato da planilha do professor (ID, atividade, início, duração, término, "
         "precedência) acrescido dos custos por tipo de recurso. Prazos estão em semanas do projeto, e não "
         "em dias corridos. Os totais por atividade são as estimativas originais do grupo; a divisão por tipo é "
-        "premissa até haver cotações (Tabela 8)."
+        f"premissa até haver cotações ({R('custos')})."
     )
     cost_by_id = costs.set_index("id")
     rows: list[list[str]] = []
@@ -362,7 +399,7 @@ def build_report() -> Builder:
         [2.0, 7.2, 3.0, 2.2, 1.6],
         "elaboração própria. hH: hora-homem, com 40 horas por semana; hM: hora-máquina. As taxas de mão de obra "
         "são hipóteses e os demais preços dependem de cotação; a fresagem do lote de 2.000 cartões usa de 62 a "
-        "83 horas-máquina (Seção 4.2).",
+        f"83 horas-máquina ({R('s_macro')}).",
         right_cols=(3, 4),
     )
     b.heading("2.5 Cronograma, caminho crítico e linha de base", 2)
@@ -374,7 +411,7 @@ def build_report() -> Builder:
     )
 
     b.figure("fig_gantt_curva_s.png", "Curva S de custo acumulado e Gantt do projeto, em semanas.", width_cm=13.0,
-             source="elaboração própria a partir da Tabela 7.")
+             source=f"elaboração própria a partir da {R('atividades')}.")
     b.heading("2.6 Viabilidade econômica", 2)
     unit_net = margin - eol_unit
     V, N, SUB, SUP, FR, SUM, PAR = mm.v, mm.n, mm.sub, mm.sup, mm.frac, mm.total, mm.paren
@@ -383,7 +420,7 @@ def build_report() -> Builder:
     r_star = SUP(V("r"), N("*"))
     discounted = lambda rate: SUP(PAR(N("1 + ") + rate), V("t"))  # noqa: E731
     b.para(
-        "O modelo usa um fluxo de caixa semanal: o investimento segue a linha de base de custo (Tabela 7) e as "
+        f"O modelo usa um fluxo de caixa semanal: o investimento segue a linha de base de custo ({R('atividades')}) e as "
         "vendas, em ritmo constante, começam depois do desenvolvimento. Os fluxos ocorrem no fim de cada semana e "
         "o custo de fim de vida é proporcional às unidades vendidas. Com a notação abaixo, valem as equações:"
     )
@@ -422,9 +459,9 @@ def build_report() -> Builder:
     t_be = pp.payback_months(pp.cash_flows(1000, unit_net))
     price_be = lambda price: math.ceil(pp.BUDGET / (price - p["variable_cost_brl"] - eol_unit))  # noqa: E731
     b.para(
-        f"Com margem líquida de {brl(unit_net)} por cartão, depois de {brl(eol_unit)} de fim de vida (Tabela 19), o "
+        f"Com margem líquida de {brl(unit_net)} por cartão, depois de {brl(eol_unit)} de fim de vida ({R('fase_ativ')}), o "
         f"cenário base, de 1.000 cartões vendidos em 12 meses, iguala o investimento no mês {br(t_be, 1)} "
-        f"(Figura 5). O equilíbrio simples exige {break_even_total} cartões e o VPL só é positivo a partir de "
+        f"({R('viab_fig')}). O equilíbrio simples exige {break_even_total} cartões e o VPL só é positivo a partir de "
         f"{zero_npv}; a R$ 149 de preço o equilíbrio sobe para {price_be(149)} cartões e a R$ 249 cai para "
         f"{price_be(249)}."
     )
@@ -482,7 +519,7 @@ def build_report() -> Builder:
         [[crit, pct(w), *[str(SCORES[k][i]) for k in "ABC"]] for i, (crit, w) in enumerate(CRITERIA.items())]
         + [["Nota ponderada", "100%", *[br(scores[k], 2) for k in "ABC"]]],
         [4.6, 2.0, 3.1, 3.1, 3.2],
-        "elaboração própria. As alternativas A, B e C estão compostas na Tabela 10. Pesos e notas são julgamento "
+        f"elaboração própria. As alternativas A, B e C estão compostas na {R('morf')}. Pesos e notas são julgamento "
         "da equipe.",
         bold_rows=(5,), right_cols=(1, 2, 3, 4),
     )
@@ -494,7 +531,7 @@ def build_report() -> Builder:
     )
     b.heading("3.3 Arquitetura e ergonomia", 2)
     b.figure("fig_croqui.png", "Croqui da arquitetura integral: uma placa de fibra de carbono com funções usinadas "
-             "e gravadas.", width_cm=10.0, source="elaboração própria; ilustrativo.")
+             "e gravadas.", width_cm=12.0, source="elaboração própria; ilustrativo.")
     b.para(
         "A avaliação ergonômica usa o método SHERPA [30]: para cada tarefa do usuário, listam-se os erros "
         "possíveis (deslizes, lapsos e enganos [31]), a prevenção no projeto e a verificação. O cartão é segurado "
@@ -618,7 +655,7 @@ def build_report() -> Builder:
          ["Pedido e entrega", "Plataforma e rastreio", "Vendas e atendimento", "Envio em até 2 dias úteis"],
          ["Arrependimento (7 dias)", "Formulário", "Vendas e atendimento", "Reembolso imediato [7]"],
          ["Defeito ou vício", "Formulário com fotos e lote", "Produção e qualidade", "Triagem técnica em 5 dias úteis"],
-         ["Fim de vida", "Formulário e código de postagem", "Vendas e atendimento", "Ver Seção 6"]],
+         ["Fim de vida", "Formulário e código de postagem", "Vendas e atendimento", f"Ver {R('s_desc')}"]],
         [3.8, 4.4, 3.6, 4.2],
         "elaboração própria. Os níveis de serviço são propostas do grupo, "
         "revisáveis após o piloto.",
@@ -648,7 +685,7 @@ def build_report() -> Builder:
         "parecer jurídico."
     )
     b.figure("fig_ciclo_vida.png", "Posição da descontinuidade no ciclo de vida: cada cliente devolve o cartão em "
-             "um momento diferente.", width_cm=11.0, source="elaboração própria; esquemático, sem escala.")
+             "um momento diferente.", width_cm=13.0, source="elaboração própria; esquemático, sem escala.")
     b.heading("6.2 Decisões de recolhimento e remanufatura", 2)
     b.table(
         "Decisões da logística reversa",
@@ -686,8 +723,8 @@ def build_report() -> Builder:
     b.para(
         f"O recolhimento é considerado encerrado quando forem recebidas {pct(mid)} das unidades vendidas "
         f"({br(p['lot_units'] * mid)} cartões do lote de {br(p['lot_units'])}) ou {br(p['horizon_months'])} meses "
-        "após o fim das vendas, o que ocorrer primeiro, com revisão aos 12 meses. A Figura 11 "
-        "e a Tabela 19 mostram dependências, prazos e custos."
+        f"após o fim das vendas, o que ocorrer primeiro, com revisão aos 12 meses. A {R('fase_fig')} "
+        f"e a {R('fase_ativ')} mostram dependências, prazos e custos."
     )
     b.figure("reverse_flow_fase.png", "Dependência entre as atividades da fase de descontinuidade.", width_cm=15.0,
              source="elaboração própria.")
@@ -766,9 +803,9 @@ def build_report() -> Builder:
         b.small(ref_text, 9.5, left=True)
 
     # ------------------------------------------------------------- apêndices
-    b.appendix("A", "Detalhamento das Seções 1.5 e 6")
-    b.figure("fig_porter.png", "Intensidade das cinco forças competitivas (escala de 1 a 5).", width_cm=11.5,
-             source="elaboração própria a partir da Tabela 4.")
+    b.appendix("A", f"Detalhamento das Seções {num('s_swot')} e {num('s_desc')}")
+    b.figure("fig_porter.png", "Intensidade das cinco forças competitivas (escala de 1 a 5).", width_cm=14.0,
+             source=f"elaboração própria a partir da {R('porter')}.")
     brows = [[labels_pt[r.option], brl(r.cost_per_return_brl), br(r.custo, 2), br(r.estimulo), br(r.simplicidade),
               br(r.mensagem), br(r.recompra), br(r.weighted_score, 2)]
              for r in benefit.itertuples() for labels_pt in [{
@@ -816,8 +853,8 @@ def build_report() -> Builder:
     b.appendix("B", "Premissas e natureza dos dados")
     rows_c = [
         ["Formato CR80 (85,60 × 53,98 mm) e espessura de até 2 mm", "Observada", "Plano de validação técnica"],
-        ["Preço líquido R$ 199, custo variável R$ 80, lote de 2.000", "Observada", "Seções 1.5 e 5"],
-        ["Orçamento R$ 54 mil e reserva R$ 6 mil", "Observada", "Seção 2"],
+        ["Preço líquido R$ 199, custo variável R$ 80, lote de 2.000", "Observada", f"Seções {num('s_viab')} e {num('s_lanc')}"],
+        ["Orçamento R$ 54 mil e reserva R$ 6 mil", "Observada", f"Seção {num('s_proj')}"],
         ["Divisão do custo por tipo de recurso e taxas-padrão", "Hipótese", "Cotações (A4, A5)"],
         ["Frete reverso (R$ 15), kit (R$ 2,50) e triagem (R$ 4)", "Hipótese", "Contrato dos Correios; teste de bancada"],
         ["Vale-desconto de R$ 20 e taxa de resgate de 50%", "Hipótese", "Piloto"],

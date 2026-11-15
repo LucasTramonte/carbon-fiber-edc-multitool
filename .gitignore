@@ -52,3 +52,7 @@ src/extrair_mercadolivre.py
 src/oauth_mercadolivre.py
 src/gerar_manual_coleta_pdf.py
 src/gerar_relatorio_docx.py
+
+# Local CI environments built by scripts/ci_local.py
+.ci-venvs/
+.claude/settings.local.json

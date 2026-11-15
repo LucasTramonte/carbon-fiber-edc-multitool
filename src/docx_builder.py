@@ -182,7 +182,12 @@ def load_team() -> dict:
 class Builder:
     """Small helper that applies the course formatting rules."""
 
-    def __init__(self) -> None:
+    def __init__(self, label_map: dict[str, dict[str, str]] | None = None) -> None:
+        """``label_map`` maps title prefixes (tables, headings) or file names (figures) to a label; the
+        builder records the number it gives each one in ``labels`` so text can cite it without typing it."""
+        self.label_map = label_map or {}
+        self.labels: dict[str, str] = {}
+        self.figure_log: list[tuple[str, float, float]] = []  # file, placed width in cm, scale
         self.doc = Document()
         section = self.doc.sections[0]
         section.page_height, section.page_width = Cm(29.7), Cm(21.0)
@@ -228,7 +233,15 @@ class Builder:
     def page_break(self) -> None:
         self.doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
 
+    def _register(self, kind: str, key_text: str, value: str) -> None:
+        for prefix, label in self.label_map.get(kind, {}).items():
+            if key_text.startswith(prefix):
+                self.labels[label] = value
+
     def heading(self, text: str, level: int = 1, new_page: bool = False) -> None:
+        number, _, title = text.partition(" ")
+        if number.rstrip(".").replace(".", "").isdigit():
+            self._register("headings", title, f"Seção {number.rstrip('.')}")
         paragraph = self.doc.add_paragraph()
         paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
         paragraph.paragraph_format.keep_with_next = True
@@ -273,6 +286,13 @@ class Builder:
     # --------------------------------------------------------------- figures
     def figure(self, filename: str, caption: str, width_cm: float = 14.0, source: str = "") -> None:
         self.fig_no += 1
+        self._register("figures", filename, f"Figura {self.prefix}{self.fig_no}")
+        from PIL import Image
+
+        with Image.open(FIGURES / filename) as image:
+            dpi = (image.info.get("dpi") or (170,))[0]  # Graphviz PNGs carry no dpi: they are drawn at 170
+            native_cm = image.size[0] / dpi * 2.54
+        self.figure_log.append((filename, width_cm, width_cm / native_cm))
         paragraph = self.doc.add_paragraph()
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         paragraph.paragraph_format.keep_with_next = True
@@ -290,6 +310,7 @@ class Builder:
               source: str = "", font: float = 9.5, bold_rows: tuple[int, ...] = (),
               right_cols: tuple[int, ...] = ()) -> None:
         self.tab_no += 1
+        self._register("tables", title, f"Tabela {self.prefix}{self.tab_no}")
         caption = self.doc.add_paragraph()
         caption.alignment = WD_ALIGN_PARAGRAPH.LEFT
         caption.paragraph_format.keep_with_next = True

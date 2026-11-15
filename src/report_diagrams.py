@@ -49,8 +49,9 @@ def _q(text: str) -> str:
 
 def wbs_dot() -> str:
     """Top-down-style WBS (drawn left to right for width): product, deliverables, packages."""
+    product = _q("Cartão multitool\nvalidado e lançado\nem piloto")
     lines = ["digraph wbs {", "  rankdir=LR;", "  " + HEAD,
-             f'  P [label="{_q("Cartão multitool\nvalidado e lançado\nem piloto")}", fillcolor="{DARK}", fontcolor=white];']
+             f'  P [label="{product}", fillcolor="{DARK}", fontcolor=white];']
     for code, name in pp.DELIVERABLES.items():
         lines.append(f'  E{code[0]} [label="{_q(code + " " + name)}", fillcolor="{LIGHT}"];')
         lines.append(f"  P -> E{code[0]};")
@@ -306,23 +307,38 @@ def break_even_figure(path: Path) -> None:
     plt.close(fig)
 
 
+ORG_LABELS = {
+    "SP": "Patrocinador (docente)\naprova a minuta e as fases",
+    "GP": "Gerente do projeto (discente)\nprazo, custo e riscos",
+    "EQ": "Equipe de projeto\nrequisitos e ensaios\nA1, A2, A6, A9",
+    "PJ": "Projetista\nCAD e tolerâncias\nA3",
+    "CP": "Compras\nchapa e usinagem\nA4",
+    "PD": "Produção e qualidade\nprocesso e inspeção\nA7",
+    "MK": "Marketing e atendimento\nvendas e recolhimento\nA8",
+    "FO": "Fornecedores\nchapa e usinagem\nA4, A5",
+    "US": "Usuários e clientes\ntestes e compra\nA1, A6, A8",
+    "CR": "Correios e reciclador\nfrete reverso e destino\nA8, A9",
+}
+
+
 def org_chart_dot() -> str:
     """Project organogram (Cap. 5): hierarchy, roles and the activities each one answers for."""
+    q = {key: _q(text) for key, text in ORG_LABELS.items()}
     return f"""digraph organograma {{
   rankdir=TB;
   {HEAD}
-  SP [label="{_q("Patrocinador (docente)\naprova a minuta e as fases")}", fillcolor="{DARK}", fontcolor=white];
-  GP [label="{_q("Gerente do projeto (discente)\nprazo, custo e riscos")}", fillcolor="{LIGHT}"];
-  EQ [label="{_q("Equipe de projeto\nrequisitos e ensaios\nA1, A2, A6, A9")}"];
-  PJ [label="{_q("Projetista\nCAD e tolerâncias\nA3")}"];
-  CP [label="{_q("Compras\nchapa e usinagem\nA4")}"];
-  PD [label="{_q("Produção e qualidade\nprocesso e inspeção\nA7")}"];
-  MK [label="{_q("Marketing e atendimento\nvendas e recolhimento\nA8")}"];
+  SP [label="{q['SP']}", fillcolor="{DARK}", fontcolor=white];
+  GP [label="{q['GP']}", fillcolor="{LIGHT}"];
+  EQ [label="{q['EQ']}"];
+  PJ [label="{q['PJ']}"];
+  CP [label="{q['CP']}"];
+  PD [label="{q['PD']}"];
+  MK [label="{q['MK']}"];
   subgraph cluster_ext {{
     label="Interessados externos"; style="dashed"; color="{GREY}"; fontsize=11;
-    FO [label="{_q("Fornecedores\nchapa e usinagem\nA4, A5")}", fillcolor="#fafafa"];
-    US [label="{_q("Usuários e clientes\ntestes e compra\nA1, A6, A8")}", fillcolor="#fafafa"];
-    CR [label="{_q("Correios e reciclador\nfrete reverso e destino\nA8, A9")}", fillcolor="#fafafa"];
+    FO [label="{q['FO']}", fillcolor="#fafafa"];
+    US [label="{q['US']}", fillcolor="#fafafa"];
+    CR [label="{q['CR']}", fillcolor="#fafafa"];
   }}
   SP -> GP;
   GP -> EQ; GP -> PJ; GP -> CP; GP -> PD; GP -> MK;

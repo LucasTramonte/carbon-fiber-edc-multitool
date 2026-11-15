@@ -1,0 +1,66 @@
+# CLAUDE.md
+
+Instructions for AI agents working in this repository. Humans: the README is the entry point.
+
+## What this project is
+
+Reproducible product-development study for a carbon-fibre card multitool (course ER801A). Python models
+(`src/`), tests (`tests/`), a Portuguese course report generated from those models
+(`src/generate_report_docx.py`), and English documentation (README, `docs/`). The user writes in Portuguese:
+reply in Portuguese; the report is Portuguese; README, code and commit messages are English.
+
+## Commands
+
+| Task | Command |
+| --- | --- |
+| Tests | `python -m pytest -q` |
+| CI parity (required before any push) | `python scripts/ci_local.py` (Python 3.10, no Graphviz, about 20 s after the first run) |
+| Build the local report PDF | `powershell scripts/build_report_pdf.ps1` (Word converts the .docx) |
+| Look at the PDF like a reader | `python scripts/report_check.py --png "Tabela 9"` then open the PNGs |
+| Redraw figures | `python src/report_diagrams.py` and `python src/strategic_analysis.py` |
+
+## This machine is not the CI
+
+The dev machine runs Python 3.12 with Graphviz and Word. The GitHub runner runs Python 3.10, 3.11, 3.12 and 3.13 on
+Linux with no Graphviz and no Word. Green local tests prove little about the CI. Never say "tests pass" without
+saying where; after a push, check `gh run list --limit 3` and report the result, failures included.
+
+## Rules that come from real mistakes
+
+| Mistake | Rule | Guard |
+| --- | --- | --- |
+| Backslash inside an f-string expression: valid on 3.12, `SyntaxError` on 3.10/3.11; the CI failed on every push of one working session while all local tests passed | Build strings first, then interpolate the variable | `tests/test_python_compatibility.py`, `scripts/ci_local.py`, style hook |
+| README equations broke on GitHub (`*` became italics, `\{` lost its backslash, `%` started a comment, `R$` opened math) | Equations in ```` ```math ```` fences, inline as `` $`...`$ ``; write amounts as BRL, never `R$`; use `\star`, `\lbrace` | `tests/test_readme.py`, style hook |
+| Table, figure and section numbers typed by hand went stale after every restructure (one pointed to a deleted section) | Never type a number: use `R('label')` and `num('label')` in `generate_report_docx.py`; register new targets in `LABEL_MAP` | `test_every_label_resolves...` |
+| Figures drawn at 25 cm and printed at 10 cm: text shrank to 4 pt | Draw near final size; scale (printed width over native width) must be at least 0.5, aim for 0.65 | `test_figures_are_not_shrunk...` |
+| Tests rewrote tracked PNG files on every run | Tests draw into a temporary folder | `built` fixture |
+| Scripts that edit several files and stop halfway; heredocs that mangle backslashes and quotes | Write scripts with the Write tool, assert each replacement matches once, write all files at the end; never rerun a script that is not idempotent; prefer Edit for small changes | review the `git diff` |
+| Claimed success from numbers alone; layout problems (gaps, orphan headers, tiny text) found only by looking | Render and look at every changed page before saying it is fine | `scripts/report_check.py` |
+| Used search snippets as if they were verified pages | Cite only pages actually read; say what could not be read | cite or omit |
+
+## The report (Portuguese)
+
+- No em or en dash anywhere; use a colon. Captions read `Tabela 3: Title`.
+- Titles, captions and notes must make sense to a reader who never saw the chat: no process words such as
+  "pesquisa pública", "resolvido", "parcial", "pendente".
+- No line break inside a word or a short phrase in table cells (`fit_columns` in `src/docx_builder.py`); table fonts
+  not below 8 pt.
+- Appendices only for material cited by number in the body; no duplicated tables or figures; the body is about 15
+  pages. Course slides are not cited in the references; public sources are.
+- Equations are native Word equations built with `src/omml.py` and numbered with `Builder.equation`.
+- `.docx` and `.pdf` are git-ignored on purpose, as are `assets/courses/`, `report/team.local.json`,
+  `report/local_assets/` and `AGENTS.MD`. Never force-add them.
+
+## Git
+
+- Commit identity in this repository's history is the GitHub noreply address; do not use the user's personal or
+  work e-mail anywhere public.
+- Do not push unless asked. Pushing needs the `gh` account `LucasTramonte` (the `lucastramonte-hue` account is
+  read-only). Commit messages end with the Co-Authored-By trailer given by the harness.
+
+## Skills and hooks in `.claude/`
+
+- Skills: `update-report` (change and verify the report), `ship` (commit, push, check the CI).
+- Hooks (`settings.json`): `git_gate.py` blocks `git commit` while tests fail and `git push` while the CI steps fail
+  or private files are staged; `style_guard.py` flags dashes, f-strings that need Python 3.12 and unsafe README
+  math right after an edit.

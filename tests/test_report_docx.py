@@ -1,12 +1,14 @@
 """Tests for the generated Portuguese report (structure, numbering, language, citations)."""
 
 import re
+import shutil
 from pathlib import Path
 
 import pytest
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.oxml.ns import qn
 
+from src import docx_builder
 from src import generate_report_docx as gr
 from src import report_diagrams, reverse_flow_diagram, strategic_analysis
 from src import reverse_logistics_model as rl
@@ -15,12 +17,28 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture(scope="module")
-def doc():
+def built(tmp_path_factory):
+    """Build the report with figures drawn into a temporary folder, so running the tests never rewrites the
+    PNG files tracked in the repository. The tracked figures are copied first: Graphviz may be missing."""
+    figures = tmp_path_factory.mktemp("figures")
+    shutil.copytree(ROOT / "outputs" / "visualizations", figures, dirs_exist_ok=True)
     rl.run()
-    reverse_flow_diagram.write_all(png_dir=ROOT / "outputs" / "visualizations")
-    report_diagrams.render_all()
+    reverse_flow_diagram.write_all(png_dir=figures)
+    report_diagrams.render_all(figures)
+    strategic_analysis.FIG_DIR = figures
     strategic_analysis.render_all()
-    return gr.build_report().doc
+    original = docx_builder.FIGURES
+    docx_builder.FIGURES = figures
+    try:
+        yield gr.build_report()
+    finally:
+        docx_builder.FIGURES = original
+        strategic_analysis.FIG_DIR = ROOT / "outputs" / "visualizations"
+
+
+@pytest.fixture(scope="module")
+def doc(built):
+    return built.doc
 
 
 def _texts(document) -> list[str]:
@@ -132,3 +150,21 @@ def test_economic_model_is_written_as_numbered_equations(doc) -> None:
     for number in range(1, 8):
         assert f"({number})" in text
     assert "VPL" in "".join(t.text or "" for t in doc.element.body.iter(math + "t"))
+
+
+def test_every_label_resolves_and_every_reference_names_an_existing_caption(built) -> None:
+    expected = {label for group in gr.LABEL_MAP.values() for label in group.values()}
+    assert expected <= set(built.labels), expected - set(built.labels)
+    paragraphs = _texts(built.doc)
+    text = " ".join(paragraphs)
+    assert not re.search(r"(Tabela|Figura|Seção|Seções) \?", text), "unresolved cross-reference"
+    for key, label in built.labels.items():
+        if not key.startswith("s_"):  # tables and figures must exist as captions
+            assert any(p.startswith(f"{label}:") for p in paragraphs), label
+
+
+def test_figures_are_not_shrunk_below_a_readable_scale(built) -> None:
+    """A figure drawn at 25 cm and printed at 10 cm turns 9 pt text into 3.6 pt. Draw figures near their final
+    size; the floor is 0.5 and the target is 0.65 or more."""
+    too_small = [(name, round(scale, 2)) for name, _, scale in built.figure_log if scale < 0.5]
+    assert not too_small, too_small

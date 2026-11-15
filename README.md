@@ -236,7 +236,14 @@ The repository includes:
 - dependency review on pull requests;
 - Dependabot updates for Python packages and GitHub Actions;
 - a pull-request checklist covering provenance, privacy, tests, and outputs;
-- `CODEOWNERS` and a security policy for maintainership.
+- `CODEOWNERS` and a security policy for maintainership;
+- `scripts/ci_local.py`, which runs the CI steps on this machine with Python 3.10 and
+  without Graphviz, as the GitHub runner does (a newer local Python can hide a
+  `SyntaxError`);
+- `scripts/report_check.py` and `scripts/build_report_pdf.ps1`, which build the report PDF
+  and check its layout (pages, empty bands, dashes, unresolved references);
+- `CLAUDE.md` with the working rules for AI agents, plus project skills and hooks in
+  `.claude/` that block a commit while the tests fail and a push while the CI steps fail.
 
 These workflows are intentionally restricted to read-only repository access
 unless a security-analysis permission is required by CodeQL.
@@ -318,38 +325,62 @@ of development, sales and profit start at the launch, and the break-even is the
 month where the cumulative profit equals the investment (month 9.2 for 1,000
 cards; dashed lines show 600 and 2,000 cards).
 
-With $p$ the net unit price, $c_v$ the variable cost, $c_f$ the end-of-life cost
-per card, $Q$ the cards sold in 12 months, $C_t$ the cost of week $t$ in the
-baseline, $I=\sum_{t=1}^{T_d} C_t$ the investment, $T_d=14$ and $T_v=52$ the weeks
-of development and sales ($T=T_d+T_v$), and $i$ the discount rate:
+Notation: $`p`$ is the net unit price, $`c_v`$ the variable cost, $`c_f`$ the
+end-of-life cost per card, $`Q`$ the cards sold in 12 months, $`C_t`$ the cost of
+week $`t`$ in the baseline, $`I = \sum_{t=1}^{T_d} C_t`$ the investment, $`T_d = 14`$
+and $`T_v = 52`$ the weeks of development and sales ($`T = T_d + T_v`$), and $`i`$
+the discount rate. Net unit margin and weekly cash flow:
 
-$$m = p - c_v - c_f$$
+```math
+m = p - c_v - c_f
+```
 
-$$F_t = \begin{cases} -C_t, & 1 \le t \le T_d \\ \dfrac{Q}{T_v}\,m, & T_d < t \le T \end{cases}$$
+```math
+F_t = \begin{cases} -C_t, & 1 \le t \le T_d \\ \dfrac{Q}{T_v}\, m, & T_d < t \le T \end{cases}
+```
 
-$$\mathrm{NPV} = \sum_{t=1}^{T} \frac{F_t}{(1+i_s)^t}, \qquad i_s = (1+i)^{1/52} - 1$$
+Net present value, with the weekly rate equivalent to the annual one:
 
-$$\sum_{t=1}^{T} \frac{F_t}{(1+r^*)^t} = 0, \qquad \mathrm{IRR}_{\text{month}} = (1+r^*)^{52/12} - 1$$
+```math
+\mathrm{NPV} = \sum_{t=1}^{T} \frac{F_t}{(1+i_s)^t}, \qquad i_s = (1+i)^{1/52} - 1
+```
 
-$$\mathrm{ROI} = \frac{\sum_{t=1}^{T} F_t}{I} = \frac{Q\,m - I}{I}$$
+Internal rate of return ($`r^{\star}`$ is the weekly rate that zeroes the NPV) and its monthly equivalent:
 
-$$\tau = \min\Big\{k : \sum_{t=1}^{k} F_t \ge 0\Big\}, \qquad \text{payback} = \tau\cdot\tfrac{12}{52}\ \text{months}$$
+```math
+\sum_{t=1}^{T} \frac{F_t}{(1+r^{\star})^t} = 0, \qquad \mathrm{IRR}_{\mathrm{month}} = (1+r^{\star})^{52/12} - 1
+```
 
-$$Q_{\mathrm{NPV}=0} = \frac{\sum_{t=1}^{T_d} C_t\,(1+i_s)^{-t}}{\dfrac{m}{T_v}\sum_{t=T_d+1}^{T}(1+i_s)^{-t}}$$
+Return on investment and payback (the week $`\tau`$ when the cumulative flow turns non-negative, converted to months):
+
+```math
+\mathrm{ROI} = \frac{\sum_{t=1}^{T} F_t}{I} = \frac{Q\,m - I}{I}
+```
+
+```math
+\tau = \min\left\{ k : \sum_{t=1}^{k} F_t \ge 0 \right\}, \qquad \text{payback} = \tau \cdot \frac{12}{52} \text{ months}
+```
+
+Cards sold in 12 months at which the NPV is zero:
+
+```math
+Q_{\mathrm{NPV}=0} = \frac{\sum_{t=1}^{T_d} C_t\,(1+i_s)^{-t}}{\dfrac{m}{T_v}\sum_{t=T_d+1}^{T}(1+i_s)^{-t}}
+```
 
 The cash flow changes sign once, so the positive IRR is unique (Descartes' rule
-of signs). The simple break-even is $Q_{eq}=\lceil I/m\rceil$, where the ROI is zero.
+of signs). The simple break-even is $`Q_{eq} = \lceil I/m \rceil`$, where the ROI is zero.
 
-Parameters: $p=$ R$ 199, $c_v=$ R$ 80 (planning hypotheses), $c_f=$ R$ 11.05
-(end-of-life phase cost spread over the 2,000-card lot), $I=$ R$ 54,000, and
-$i=13.75\%$ per year, the Selic target published by the Central Bank of Brazil
-(SGS series 432), used as the minimum attractive rate.
+Parameters: $`p = 199`$ and $`c_v = 80`$ (planning hypotheses, in BRL),
+$`c_f = 11.05`$ (end-of-life phase cost spread over the 2,000-card lot),
+$`I = 54000`$ (development budget), and $`i = 0.1375`$ per year, the Selic target
+published by the Central Bank of Brazil (SGS series 432), used as the minimum
+attractive rate.
 
-| Cards sold in 12 months | Break-even (month) | ROI | NPV | Monthly IRR |
+| Cards sold in 12 months | Break-even (month) | ROI | NPV (BRL) | Monthly IRR |
 | ---: | ---: | ---: | ---: | ---: |
-| 600 | 13.2 | 20% | R$ 5,520 | 2.4% |
-| 1,000 | 9.2 | 100% | R$ 44,603 | 10.0% |
-| 2,000 | 6.2 | 300% | R$ 142,309 | 23.1% |
+| 600 | 13.2 | 20% | 5,520 | 2.4% |
+| 1,000 | 9.2 | 100% | 44,603 | 10.0% |
+| 2,000 | 6.2 | 300% | 142,309 | 23.1% |
 
 The simple break-even needs 501 cards and the NPV is positive from 544. These
 are planning goals under hypothetical price and cost, not forecasts. The
