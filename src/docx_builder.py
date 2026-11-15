@@ -19,6 +19,11 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
 
+try:
+    from src.omml import math_element, math_paragraph_element, n as math_text
+except ImportError:  # pragma: no cover
+    from omml import math_element, math_paragraph_element, n as math_text
+
 ROOT = Path(__file__).resolve().parents[1]
 FIGURES = ROOT / "outputs" / "visualizations"
 TEAM_LOCAL = ROOT / "report" / "team.local.json"
@@ -125,11 +130,13 @@ def fit_columns(headers: list[str], rows: list[list[str]], widths: list[float], 
         short = [w for w in (text_width_cm(c, fonts[i]) for c in clauses) if w <= SHORT_PHRASE_CM]
         return max(short, default=0.0) + CELL_PADDING_CM
 
+    original = list(widths)  # a donor never gives up more than 12% of its width: long text must keep room
     for i in range(n):
         guard = 0
         while phrase_need(i) > widths[i] + 1e-9 and guard < 40:
             guard += 1
-            slack = [(widths[j] - max(phrase_need(j), longest_word_cm(columns[j], fonts[j]) + CELL_PADDING_CM) - 0.1, j)
+            slack = [(min(widths[j] - max(phrase_need(j), longest_word_cm(columns[j], fonts[j]) + CELL_PADDING_CM) - 0.1,
+                          widths[j] - 0.88 * original[j]), j)
                      for j in range(n) if j != i]
             room, donor = max(slack)
             if room <= 0.05:
@@ -196,6 +203,7 @@ class Builder:
         self._footer_page_number(section)
         self.fig_no = 0
         self.tab_no = 0
+        self.eq_no = 0
         self.table_log: list = []  # (table number, headers, per-column fonts), for tests
         self.prefix = ""  # "" in the body, "A." / "B." ... inside appendices
 
@@ -310,10 +318,52 @@ class Builder:
                 self._cell(cells[i], value, widths_cm[i], col_fonts[i], bold=r in bold_rows,
                            shade="F2F2F2" if r in bold_rows else "", right=i in right_cols)
             self._no_split(table.rows[-1])
+        # a header must never be left alone at the bottom of a page: keep it with the first data row
+        keep_rows = table.rows[:1]
+        for row in keep_rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    paragraph.paragraph_format.keep_with_next = True
         if source:
             self.small(f"Fonte: {source}", 9.5)
         else:
             self.small("", 4)
+
+    def equation(self, fragment: str) -> None:
+        """Numbered display equation: a borderless row with the equation centred and its number at the right."""
+        self.eq_no += 1
+        table = self.doc.add_table(rows=1, cols=3)
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        table.autofit = False
+        layout = OxmlElement("w:tblLayout")
+        layout.set(qn("w:type"), "fixed")
+        table._tbl.tblPr.append(layout)
+        for cell, width in zip(table.rows[0].cells, (1.0, 13.6, 1.4)):
+            cell.width = Cm(width)
+            vertical = OxmlElement("w:vAlign")
+            vertical.set(qn("w:val"), "center")
+            cell._tc.get_or_add_tcPr().append(vertical)
+        for column, width in zip(table.columns, (1.0, 13.6, 1.4)):
+            column.width = Cm(width)
+        middle = table.rows[0].cells[1].paragraphs[0]
+        middle.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
+        middle.paragraph_format.space_after = Pt(0)
+        middle._p.append(math_paragraph_element(fragment))
+        number = table.rows[0].cells[2].paragraphs[0]
+        number.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        number.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
+        number.paragraph_format.space_after = Pt(0)
+        number.add_run(f"({self.eq_no})").font.size = Pt(12)
+        self._no_split(table.rows[0])
+
+    def math_para(self, parts: list) -> None:
+        """Body paragraph mixing text (str) with inline math (a one-item tuple holding an OMML fragment)."""
+        paragraph = self.doc.add_paragraph()
+        for part in parts:
+            if isinstance(part, tuple):
+                paragraph._p.append(math_element(part[0]))
+            else:
+                paragraph.add_run(part)
 
     SWOT_STYLE = {
         "FORÇAS": ("Forças (interno, positivo)", "E1EDFA", "1F5FAA"),

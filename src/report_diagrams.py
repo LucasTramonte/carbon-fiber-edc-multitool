@@ -331,12 +331,32 @@ def org_chart_dot() -> str:
 """
 
 
-def viability_figure(path: Path) -> None:
+VIABILITY_TEXT = {
+    "pt": {"scenarios": ("600 cartões", "2.000 cartões"), "break_even": "Equilíbrio: mês {t}",
+           "profit": "Lucro (1.000 cartões)", "sales": "Vendas (1.000 cartões)",
+           "investment": "Investimento: R$ {v} mil", "gain": "Lucro efetivo", "launch": "Lançamento",
+           "arrows": ("Desenvolvimento", "Vendas até o equilíbrio", "Tempo total até o equilíbrio"),
+           "x": "Meses desde o início do projeto", "y": "R$ mil acumulados", "decimal": ","},
+    "en": {"scenarios": ("600 cards", "2,000 cards"), "break_even": "Break-even: month {t}",
+           "profit": "Profit (1,000 cards)", "sales": "Sales (1,000 cards)",
+           "investment": "Investment: R$ {v}k", "gain": "Net gain", "launch": "Launch",
+           "arrows": ("Development", "Sales until break-even", "Total time to break-even"),
+           "x": "Months since project start", "y": "Cumulative R$ thousand", "decimal": "."},
+}
+
+
+def viability_figure(path: Path, lang: str = "pt") -> None:
     """Investment, sales and profit by month, in the style of the course example (Cap. 5).
 
     Base scenario: 1,000 cards sold evenly over the 12 months after the launch; the profit is the
-    margin after variable and end-of-life costs. Dashed lines show two other volumes.
+    margin after variable and end-of-life costs. Dashed lines show two other volumes. ``lang`` is
+    ``"pt"`` (report) or ``"en"`` (README).
     """
+    text = VIABILITY_TEXT[lang]
+
+    def decimal(value: str) -> str:
+        return value.replace(".", text["decimal"])
+
     p = rl.load_assumptions()
     price = p["net_price_brl"]
     unit_net = price - p["variable_cost_brl"] - rl.end_of_life_unit_cost(p)
@@ -362,7 +382,7 @@ def viability_figure(path: Path) -> None:
     ax.plot(t_sales, profit, color=blue, lw=2.6)
     ax.fill_between(t_sales, invest, profit, where=profit >= invest, color=blue, alpha=0.18, hatch="||",
                     edgecolor=blue, linewidth=0)
-    for other, label in ((600, "600 cartões"), (2000, "2.000 cartões")):
+    for other, label in zip((600, 2000), text["scenarios"]):
         line = other * unit_net * weeks / pp.SALES_WEEKS / 1000
         ax.plot(t_sales, line, color=blue, lw=1.4, ls="--", alpha=0.7)
         ax.text(horizon + 0.15, line[-1], label, color=blue, fontsize=8.5, va="center")
@@ -372,29 +392,27 @@ def viability_figure(path: Path) -> None:
     t_be = months_to_break_even(units)
     ax.plot([t_be, t_be], [0, invest], color=DARK, ls=":", lw=1.2)
     ax.plot(t_be, invest, "o", color=DARK, ms=7, zorder=5)
-    ax.text(t_be - 0.15, 3, f"Equilíbrio: mês {t_be:.1f}".replace(".", ","), fontsize=9.5, ha="right",
+    ax.text(t_be - 0.15, 3, text["break_even"].format(t=decimal(f"{t_be:.1f}")), fontsize=9.5, ha="right",
             color=DARK, fontweight="bold")
-    ax.text(horizon + 0.15, profit[-1], "Lucro (1.000 cartões)", color=blue, fontsize=8.5, va="center",
+    ax.text(horizon + 0.15, profit[-1], text["profit"], color=blue, fontsize=8.5, va="center",
             fontweight="bold")
-    ax.text(horizon + 0.15, units * price / 1000, "Vendas (1.000 cartões)", color=green, fontsize=8.5,
+    ax.text(horizon + 0.15, units * price / 1000, text["sales"], color=green, fontsize=8.5,
             va="center", fontweight="bold")
-    ax.text(0.15, invest + 6, f"Investimento: R$ {pp.BUDGET / 1000:.0f} mil".replace(".", ","),
+    ax.text(0.15, invest + 6, text["investment"].format(v=f"{pp.BUDGET / 1000:.0f}"),
             color=RED, fontsize=9.5, fontweight="bold")
-    ax.text(t_be + 2.6, invest + 6, "Lucro efetivo", color=blue, fontsize=9, style="italic")
-    for y, x0, x1, text in ((-17, 0, launch, "Desenvolvimento"),
-                            (-17, launch, t_be, "Vendas até o equilíbrio"),
-                            (-34, 0, t_be, "Tempo total até o equilíbrio")):
+    ax.text(t_be + 2.6, invest + 6, text["gain"], color=blue, fontsize=9, style="italic")
+    for (y, x0, x1), label in zip(((-17, 0, launch), (-17, launch, t_be), (-34, 0, t_be)), text["arrows"]):
         ax.annotate("", xy=(x1, y), xytext=(x0, y), arrowprops={"arrowstyle": "<->", "color": DARK, "lw": 1})
-        ax.text((x0 + x1) / 2, y + 3.2, text, ha="center", fontsize=8.5, color=DARK)
+        ax.text((x0 + x1) / 2, y + 3.2, label, ha="center", fontsize=8.5, color=DARK)
     ax.axhline(0, color="black", lw=0.8)
     ax.axvline(launch, color=GREY, ls=":", lw=1)
-    ax.text(launch + 0.1, 225, "Lançamento", fontsize=8.5, color=GREY)
+    ax.text(launch + 0.1, 225, text["launch"], fontsize=8.5, color=GREY)
     ax.set_xlim(0, horizon + 2.6)
     ax.set_ylim(-45, 235)
     ax.set_yticks([0, 50, 100, 150, 200])
     ax.set_xticks(range(0, int(horizon) + 1, 2))
-    ax.set_xlabel("Meses desde o início do projeto")
-    ax.set_ylabel("R$ mil acumulados")
+    ax.set_xlabel(text["x"])
+    ax.set_ylabel(text["y"])
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
     fig.tight_layout()
@@ -422,6 +440,7 @@ def render_all(out_dir: Path = FIG_DIR) -> dict[str, bool]:
     regional_income_figure(out_dir / "fig_renda_regional.png")
     break_even_figure(out_dir / "fig_equilibrio.png")
     viability_figure(out_dir / "fig_viabilidade.png")
+    viability_figure(out_dir / "viability_chart_en.png", lang="en")
     return status
 
 

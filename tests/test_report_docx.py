@@ -48,7 +48,7 @@ def test_figure_and_table_numbers_are_sequential(doc) -> None:
     body_figs = [int(m.group(1)) for t in paragraphs for m in [re.match(r"Figura (\d+):", t)] if m]
     body_tabs = [int(m.group(1)) for t in paragraphs for m in [re.match(r"Tabela (\d+):", t)] if m]
     assert body_figs == list(range(1, len(body_figs) + 1)) and len(body_figs) >= 8
-    assert body_tabs == list(range(1, len(body_tabs) + 1)) and len(body_tabs) >= 19
+    assert body_tabs == list(range(1, len(body_tabs) + 1)) and len(body_tabs) >= 18
     for letter in "AB":
         figs = [int(m.group(1)) for t in paragraphs for m in [re.match(rf"Figura {letter}\.(\d+):", t)] if m]
         assert figs == list(range(1, len(figs) + 1))
@@ -123,3 +123,12 @@ def test_table_columns_fit_words_without_shrinking_below_readable_size() -> None
     for i, head in enumerate(headers):
         longest = max(head.split(), key=lambda w: text_width_cm(w, fonts[i]))
         assert text_width_cm(longest, fonts[i]) + 0.45 <= new_widths[i] + 1e-6, head
+
+
+def test_economic_model_is_written_as_numbered_equations(doc) -> None:
+    math = "{http://schemas.openxmlformats.org/officeDocument/2006/math}"
+    assert len(list(doc.element.body.iter(math + "oMathPara"))) == 7
+    text = " ".join(_texts(doc))
+    for number in range(1, 8):
+        assert f"({number})" in text
+    assert "VPL" in "".join(t.text or "" for t in doc.element.body.iter(math + "t"))

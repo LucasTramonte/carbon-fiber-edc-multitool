@@ -302,6 +302,62 @@ The marketplace-related scripts are deliberately not part of the public
 repository because access may require OAuth credentials and because raw
 marketplace material can contain restricted or identifying information.
 
+## Economic viability model
+
+The project is evaluated on a weekly cash flow. Development outlays follow the
+cost baseline of the schedule; sales start after the development and run at a
+constant pace for 12 months. Flows fall at the end of each week, and the
+end-of-life cost is proportional to the units sold.
+
+<p align="center">
+  <img src="outputs/visualizations/viability_chart_en.png" alt="Cumulative investment, sales and profit by month, with the break-even point" width="760">
+</p>
+
+The chart follows the course example: the investment rises during the 14 weeks
+of development, sales and profit start at the launch, and the break-even is the
+month where the cumulative profit equals the investment (month 9.2 for 1,000
+cards; dashed lines show 600 and 2,000 cards).
+
+With $p$ the net unit price, $c_v$ the variable cost, $c_f$ the end-of-life cost
+per card, $Q$ the cards sold in 12 months, $C_t$ the cost of week $t$ in the
+baseline, $I=\sum_{t=1}^{T_d} C_t$ the investment, $T_d=14$ and $T_v=52$ the weeks
+of development and sales ($T=T_d+T_v$), and $i$ the discount rate:
+
+$$m = p - c_v - c_f$$
+
+$$F_t = \begin{cases} -C_t, & 1 \le t \le T_d \\ \dfrac{Q}{T_v}\,m, & T_d < t \le T \end{cases}$$
+
+$$\mathrm{NPV} = \sum_{t=1}^{T} \frac{F_t}{(1+i_s)^t}, \qquad i_s = (1+i)^{1/52} - 1$$
+
+$$\sum_{t=1}^{T} \frac{F_t}{(1+r^*)^t} = 0, \qquad \mathrm{IRR}_{\text{month}} = (1+r^*)^{52/12} - 1$$
+
+$$\mathrm{ROI} = \frac{\sum_{t=1}^{T} F_t}{I} = \frac{Q\,m - I}{I}$$
+
+$$\tau = \min\Big\{k : \sum_{t=1}^{k} F_t \ge 0\Big\}, \qquad \text{payback} = \tau\cdot\tfrac{12}{52}\ \text{months}$$
+
+$$Q_{\mathrm{NPV}=0} = \frac{\sum_{t=1}^{T_d} C_t\,(1+i_s)^{-t}}{\dfrac{m}{T_v}\sum_{t=T_d+1}^{T}(1+i_s)^{-t}}$$
+
+The cash flow changes sign once, so the positive IRR is unique (Descartes' rule
+of signs). The simple break-even is $Q_{eq}=\lceil I/m\rceil$, where the ROI is zero.
+
+Parameters: $p=$ R$ 199, $c_v=$ R$ 80 (planning hypotheses), $c_f=$ R$ 11.05
+(end-of-life phase cost spread over the 2,000-card lot), $I=$ R$ 54,000, and
+$i=13.75\%$ per year, the Selic target published by the Central Bank of Brazil
+(SGS series 432), used as the minimum attractive rate.
+
+| Cards sold in 12 months | Break-even (month) | ROI | NPV | Monthly IRR |
+| ---: | ---: | ---: | ---: | ---: |
+| 600 | 13.2 | 20% | R$ 5,520 | 2.4% |
+| 1,000 | 9.2 | 100% | R$ 44,603 | 10.0% |
+| 2,000 | 6.2 | 300% | R$ 142,309 | 23.1% |
+
+The simple break-even needs 501 cards and the NPV is positive from 544. These
+are planning goals under hypothetical price and cost, not forecasts. The
+functions live in `src/project_plan.py` (`cash_flows`, `npv`, `irr_monthly`,
+`payback_months`, `economics`, `units_for_zero_npv`) and are covered by tests;
+`python src\report_diagrams.py` redraws the chart in Portuguese (for the report)
+and in English (for this README).
+
 ## Test-driven quality checks
 
 Run the complete test suite:

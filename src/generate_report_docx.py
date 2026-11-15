@@ -14,11 +14,13 @@ from pathlib import Path
 try:
     from src import project_plan as pp
     from src import reverse_logistics_model as rl
+    from src import omml as mm
     from src import strategic_analysis as sa
     from src.docx_builder import Builder, br, brl, load_team, pct
 except ImportError:  # pragma: no cover
     import project_plan as pp
     import reverse_logistics_model as rl
+    import omml as mm
     import strategic_analysis as sa
     from docx_builder import Builder, br, brl, load_team, pct
 
@@ -261,6 +263,33 @@ def build_report() -> Builder:
         "funções internas são exercidas pelos três discentes; o gerente é designado pelo grupo."
     )
     b.heading("2.2 Escopo do produto e do projeto", 2)
+    b.para("A Tabela 5 segue os campos do modelo do Capítulo 5 para a declaração do escopo do projeto; a Tabela 6 detalha o escopo do produto.")
+    b.table(
+        "Termo de abertura do projeto",
+        ["Campo", "Conteúdo"],
+        [
+            ["Projeto", "Cartão multitool em fibra de carbono (ER801A)."],
+            ["Gerente e patrocinador", "Gerente: discente designado pelo grupo. Patrocinador: docente da disciplina."],
+            ["Objetivo", "Desenvolver e validar um cartão multitool plano para EDC e ciclistas urbanos, "
+             "com lote piloto."],
+            ["Benefícios", "Testar uma alternativa leve e portátil, com evidências, antes de qualquer "
+             "afirmação de demanda."],
+            ["Prazo e custo", f"{int(sched['end_week'].max())} semanas; {brl(pp.BUDGET, 0)} mais reserva de "
+             f"{brl(pp.RESERVE, 0)} (limite de {brl(pp.BUDGET + pp.RESERVE, 0)}, definido pelo grupo)."],
+            ["Escopo do produto", "Funções e parâmetros da Tabela 6."],
+            ["Escopo do projeto", "Entregas 1.0 a 7.0 da Figura 3. Fora do escopo: certificação de segurança ou "
+             "de transporte aéreo e produção em escala."],
+            ["Premissas", "Chapa curada disponível; corte por jato d'água ou CNC; venda inicial digital."],
+            ["Restrições", "Segurança das bordas, custo, espessura de carteira, capacidade de usinagem."],
+            ["Equipe", "Três discentes, com as funções da Figura 2."],
+            ["Riscos", "Delaminação, baixa utilidade percebida, custo alto, atraso de fornecedor e rejeição "
+             "em inspeção."],
+            ["Aprovações", "Avanço de fase só com requisitos aprovados, protótipo funcional e ensaios sem "
+             "falha crítica (ponto de decisão do docente)."],
+        ],
+        [3.6, 12.4],
+        "elaboração própria.",
+    )
     b.table(
         "Escopo do produto: funções, parâmetros e critérios de aceitação",
         ["Função ou parâmetro", "Especificação", "Critério de aceitação"],
@@ -277,33 +306,6 @@ def build_report() -> Builder:
         [4.2, 6.0, 5.8],
         "elaboração própria; critérios do plano de validação técnica do projeto, com 5 amostras por ensaio.",
         font=9,
-    )
-    b.para("A Tabela 6 segue os campos do modelo do Capítulo 5 para a declaração do escopo do projeto.")
-    b.table(
-        "Termo de abertura do projeto",
-        ["Campo", "Conteúdo"],
-        [
-            ["Projeto", "Cartão multitool em fibra de carbono (ER801A)."],
-            ["Gerente e patrocinador", "Gerente: discente designado pelo grupo. Patrocinador: docente da disciplina."],
-            ["Objetivo", "Desenvolver e validar um cartão multitool plano para EDC e ciclistas urbanos, "
-             "com lote piloto."],
-            ["Benefícios", "Testar uma alternativa leve e portátil, com evidências, antes de qualquer "
-             "afirmação de demanda."],
-            ["Prazo e custo", f"{int(sched['end_week'].max())} semanas; {brl(pp.BUDGET, 0)} mais reserva de "
-             f"{brl(pp.RESERVE, 0)} (limite de {brl(pp.BUDGET + pp.RESERVE, 0)}, definido pelo grupo)."],
-            ["Escopo do produto", "Funções e parâmetros da Tabela 5."],
-            ["Escopo do projeto", "Entregas 1.0 a 7.0 da Figura 3. Fora do escopo: certificação de segurança ou "
-             "de transporte aéreo e produção em escala."],
-            ["Premissas", "Chapa curada disponível; corte por jato d'água ou CNC; venda inicial digital."],
-            ["Restrições", "Segurança das bordas, custo, espessura de carteira, capacidade de usinagem."],
-            ["Equipe", "Três discentes, com as funções da Figura 2."],
-            ["Riscos", "Delaminação, baixa utilidade percebida, custo alto, atraso de fornecedor e rejeição "
-             "em inspeção."],
-            ["Aprovações", "Avanço de fase só com requisitos aprovados, protótipo funcional e ensaios sem "
-             "falha crítica (ponto de decisão do docente)."],
-        ],
-        [3.6, 12.4],
-        "elaboração própria.",
     )
     b.heading("2.3 Estrutura analítica do projeto (EAP)", 2)
     b.figure("fig_eap.png", "EAP em três níveis: produto do projeto, entregas e pacotes de trabalho (atividades A1 a A9).",
@@ -375,17 +377,56 @@ def build_report() -> Builder:
              source="elaboração própria a partir da Tabela 7.")
     b.heading("2.6 Viabilidade econômica", 2)
     unit_net = margin - eol_unit
+    V, N, SUB, SUP, FR, SUM, PAR = mm.v, mm.n, mm.sub, mm.sup, mm.frac, mm.total, mm.paren
+    F_t, C_t = SUB(V("F"), V("t")), SUB(V("C"), V("t"))
+    T_d, T_v, i_s = SUB(V("T"), V("d")), SUB(V("T"), V("v")), SUB(V("i"), V("s"))
+    r_star = SUP(V("r"), N("*"))
+    discounted = lambda rate: SUP(PAR(N("1 + ") + rate), V("t"))  # noqa: E731
+    b.para(
+        "O modelo usa um fluxo de caixa semanal: o investimento segue a linha de base de custo (Tabela 7) e as "
+        "vendas, em ritmo constante, começam depois do desenvolvimento. Os fluxos ocorrem no fim de cada semana e "
+        "o custo de fim de vida é proporcional às unidades vendidas. Com a notação abaixo, valem as equações:"
+    )
+    b.equation(V("m") + N(" = ") + V("p") + N(f" {mm.MINUS} ") + SUB(V("c"), V("v")) + N(f" {mm.MINUS} ")
+               + SUB(V("c"), V("f")))
+    b.equation(F_t + N(" = ") + mm.cases(
+        N(mm.MINUS) + C_t + N(",   para   1 \u2264 ") + V("t") + N(" \u2264 ") + T_d,
+        FR(V("Q"), T_v) + N(f" {mm.CDOT} ") + V("m") + N(",   para   ") + T_d + N(" < ") + V("t")
+        + N(" \u2264 ") + V("T")))
+    b.equation(N("VPL = ") + SUM(N("t = 1"), V("T"), FR(F_t, discounted(i_s))) + N(",   com   ") + i_s + N(" = ")
+               + SUP(PAR(N("1 + ") + V("i")), FR(N("1"), N("52"))) + N(f" {mm.MINUS} 1"))
+    b.equation(SUM(N("t = 1"), V("T"), FR(F_t, discounted(r_star))) + N(" = 0,   ") + N("TIR = ")
+               + SUP(PAR(N("1 + ") + r_star), FR(N("52"), N("12"))) + N(f" {mm.MINUS} 1"))
+    b.equation(N("ROI = ") + FR(SUM(N("t = 1"), V("T"), F_t), V("I")) + N(" = ")
+               + FR(V("Q") + N(f" {mm.CDOT} ") + V("m") + N(f" {mm.MINUS} ") + V("I"), V("I")))
+    b.equation(V("\u03c4") + N(" = min") + PAR(V("k") + N(" : ") + SUM(N("t = 1"), V("k"), F_t) + N(" \u2265 0"),
+                                               "{", "}"))
+    b.equation(SUB(V("Q"), N("VPL=0")) + N(" = ") + FR(
+        SUM(N("t = 1"), T_d, C_t + SUP(PAR(N("1 + ") + i_s), N(mm.MINUS) + V("t"))),
+        FR(V("m"), T_v) + SUM(V("t") + N(" = ") + T_d + N(" + 1"), V("T"),
+                              SUP(PAR(N("1 + ") + i_s), N(mm.MINUS) + V("t")))))
+    im = lambda fragment: (fragment,)  # noqa: E731
+    b.math_para([
+        "Nelas, ", im(V("p")), " é o preço líquido (R$ 199); ", im(SUB(V("c"), V("v"))), " o custo variável "
+        "(R$ 80); ", im(SUB(V("c"), V("f"))), f" o custo de fim de vida por cartão ({brl(eol_unit)}); ",
+        im(V("Q")), " os cartões vendidos em 12 meses; ", im(C_t), " o custo da semana ", im(V("t")),
+        " na linha de base; ", im(V("I") + N(" = ") + SUM(N("t = 1"), T_d, C_t) + N(f" = {brl(pp.BUDGET, 0)}")),
+        " o investimento; ", im(T_d + N(" = 14")), " e ", im(T_v + N(" = 52")), " as semanas de desenvolvimento e de "
+        "vendas, com ", im(V("T") + N(" = ") + T_d + N(" + ") + T_v), "; e ", im(V("i")),
+        f" a taxa de desconto ({pct(pp.DISCOUNT_RATE, 2)} ao ano, meta Selic [29]). A TIR mensal converte a "
+        "taxa semanal ", im(r_star), "; o prazo de recuperação é ", im(V("\u03c4") + N(" \u00b7 12/52")),
+        " meses, com interpolação linear na semana ", im(V("\u03c4")), ". O equilíbrio simples é ",
+        im(SUB(V("Q"), N("eq")) + N(" = \u2308") + FR(V("I"), V("m")) + N("\u2309")), ", em que o ROI se anula. "
+        "Como o fluxo muda de sinal uma única vez, a TIR positiva é única (regra de sinais de Descartes)."])
     zero_npv = math.ceil(pp.units_for_zero_npv(unit_net))
     t_be = pp.payback_months(pp.cash_flows(1000, unit_net))
     price_be = lambda price: math.ceil(pp.BUDGET / (price - p["variable_cost_brl"] - eol_unit))  # noqa: E731
     b.para(
-        f"A análise compara o investimento de {brl(pp.BUDGET, 0)}, gasto em {int(sched['end_week'].max())} semanas, "
-        f"com a margem das vendas: {brl(margin, 0)} por cartão, ou {brl(unit_net)} depois do custo de fim de vida "
-        f"de {brl(eol_unit)} por cartão (Tabela 19). A taxa de desconto é a meta Selic, {pct(pp.DISCOUNT_RATE, 2)} "
-        f"ao ano [29]. No cenário base, de 1.000 cartões vendidos em 12 meses, o lucro acumulado iguala o "
-        f"investimento no mês {br(t_be, 1)} (Figura 5). O equilíbrio simples exige {break_even_total} cartões e o "
-        f"VPL só é positivo a partir de {zero_npv}; a R$ 149 de preço o equilíbrio sobe para {price_be(149)} cartões "
-        f"e a R$ 249 cai para {price_be(249)}."
+        f"Com margem líquida de {brl(unit_net)} por cartão, depois de {brl(eol_unit)} de fim de vida (Tabela 19), o "
+        f"cenário base, de 1.000 cartões vendidos em 12 meses, iguala o investimento no mês {br(t_be, 1)} "
+        f"(Figura 5). O equilíbrio simples exige {break_even_total} cartões e o VPL só é positivo a partir de "
+        f"{zero_npv}; a R$ 149 de preço o equilíbrio sobe para {price_be(149)} cartões e a R$ 249 cai para "
+        f"{price_be(249)}."
     )
     econ_rows = []
     for units in (600, 1000, 2000):
@@ -424,15 +465,16 @@ def build_report() -> Builder:
     )
     b.heading("3.2 Matriz morfológica e seleção do conceito", 2)
     b.table(
-        "Matriz morfológica (linhas na ordem do diagrama de blocos)",
-        ["Função", "Princípio 1", "Princípio 2", "Princípio 3"],
-        [["F1 Posicionar e encaixar", "Contorno com recortes", "Ranhura lateral", "Guia em relevo"],
-         ["F2 Transmitir torque", "Hexágonos no contorno", "Inserto metálico", "Ranhura chata"],
-         ["F3 Abrir embalagem", "Lâmina exposta", "Chanfro rombo", "Serrilha"],
-         ["F4 Medir", "Escala gravada", "Sem escala", "Escala em etiqueta"],
-         ["F5 Proteger o usuário", "Borda viva", "Raio e chanfro com inspeção", "Capa protetora"]],
-        [4.2, 3.9, 4.2, 3.7],
+        "Matriz morfológica e composição das alternativas A, B e C (número do princípio escolhido)",
+        ["Função", "Princípio 1", "Princípio 2", "Princípio 3", "A", "B", "C"],
+        [["F1 Posicionar e encaixar", "Contorno com recortes", "Ranhura lateral", "Guia em relevo", "1", "1", "1"],
+         ["F2 Transmitir torque", "Hexágonos no contorno", "Inserto metálico", "Ranhura chata", "1", "1", "2"],
+         ["F3 Abrir embalagem", "Lâmina exposta", "Chanfro rombo", "Serrilha", "1", "2", "2"],
+         ["F4 Medir", "Escala gravada", "Sem escala", "Escala em etiqueta", "1", "1", "2"],
+         ["F5 Proteger o usuário", "Borda viva", "Raio e chanfro com inspeção", "Capa protetora", "1", "2", "3"]],
+        [3.4, 3.0, 3.3, 2.8, 1.2, 1.2, 1.1],
         "elaboração própria.",
+        right_cols=(4, 5, 6),
     )
     b.table(
         "Alternativas de solução e nota ponderada (escala de 1 a 5)",
@@ -440,9 +482,8 @@ def build_report() -> Builder:
         [[crit, pct(w), *[str(SCORES[k][i]) for k in "ABC"]] for i, (crit, w) in enumerate(CRITERIA.items())]
         + [["Nota ponderada", "100%", *[br(scores[k], 2) for k in "ABC"]]],
         [4.6, 2.0, 3.1, 3.1, 3.2],
-        "elaboração própria. A: F2 hexágonos, F3 lâmina, F4 escala, F5 borda viva. B: F2 hexágonos, F3 chanfro, "
-        "F4 escala, F5 raio e chanfro. C: F2 inserto, F3 chanfro, F4 sem escala, F5 capa. Pesos e notas são "
-        "julgamento da equipe.",
+        "elaboração própria. As alternativas A, B e C estão compostas na Tabela 10. Pesos e notas são julgamento "
+        "da equipe.",
         bold_rows=(5,), right_cols=(1, 2, 3, 4),
     )
     b.para(
@@ -451,20 +492,33 @@ def build_report() -> Builder:
         f"{'vence em todos os casos' if b_always else 'nem sempre vence'}; os pesos devem ser revisados com "
         "usuários na etapa de teste de conceito."
     )
-    b.heading("3.3 Arquitetura e características estéticas", 2)
+    b.heading("3.3 Arquitetura e ergonomia", 2)
     b.figure("fig_croqui.png", "Croqui da arquitetura integral: uma placa de fibra de carbono com funções usinadas "
              "e gravadas.", width_cm=10.0, source="elaboração própria; ilustrativo.")
+    b.para(
+        "A avaliação ergonômica usa o método SHERPA [30]: para cada tarefa do usuário, listam-se os erros "
+        "possíveis (deslizes, lapsos e enganos [31]), a prevenção no projeto e a verificação. O cartão é segurado "
+        "em pinça entre o polegar e o indicador; a espessura de 2 mm e a ausência de cabo limitam a força e o "
+        "torque aplicáveis, e por isso o limite de torque é um requisito de projeto."
+    )
     b.table(
-        "Características estéticas (forma, superfície, cor, estilo e semântica)",
-        ["Atributo", "Decisão", "Justificativa"],
-        [["Forma", "Retângulo CR80 com cantos arredondados", "Compatível com carteira e leitor de cartão"],
-         ["Superfície", "Trama da fibra aparente, acabamento fosco", "Diferenciação visual e menor reflexo"],
-         ["Cor", "Preto da própria fibra, gravação em baixo relevo", "Discrição; sem tinta que descasque"],
-         ["Estilo", "Minimalista, de uso cotidiano (EDC)", "Coerência com o público e a concorrência"],
-         ["Semântica", "Leve, técnico, seguro", "Mensagem a ser confirmada em teste de uso"]],
-        [2.6, 6.2, 7.2],
-        "elaboração própria. A avaliação de erro humano considera corte na "
-        "borda, torque excessivo, delaminação por flexão e perda do cartão.",
+        "Avaliação ergonômica: erros humanos operacionais, prevenção no projeto e verificação",
+        ["Tarefa", "Erro humano possível", "Prevenção no projeto", "Verificação"],
+        [["Retirar o cartão da carteira", "Segurar pela borda e se cortar (deslize)",
+          "Chanfro contínuo e cantos arredondados", "Inspeção de borda por lote (A7)"],
+         ["Escolher o recorte", "Usar o recorte de tamanho errado e arredondar o parafuso (engano)",
+          "Medida gravada ao lado de cada recorte", "Teste de uso observado (A6)"],
+         ["Aplicar o torque", "Forçar além do limite ou fora do plano do cartão e quebrá-lo (engano)",
+          "Limite de torque no manual; fratura em modo seguro, sem projeção", "Ensaio de torque até a falha (A6)"],
+         ["Abrir embalagem", "Cortar o conteúdo ou a mão ao puxar o chanfro (deslize)",
+          "Chanfro rombo, que rompe a fita sem cortar o conteúdo", "Ensaio de abertura sem tocar no conteúdo (A6)"],
+         ["Medir com a escala", "Ler errado por falta de contraste (deslize)",
+          "Escala gravada em baixo relevo, com contraste", "Teste de legibilidade (A6)"],
+         ["Guardar", "Deixar o cartão fora da carteira e perdê-lo (lapso)",
+          "Formato CR80, que cabe na carteira; lote gravado para reposição", "Teste de uso observado (A6)"]],
+        [3.0, 4.6, 4.6, 3.8],
+        "elaboração própria, com o método SHERPA [30] e a classificação de erros de [31].",
+        font=9,
     )
 
     # ------------------------------------------------------------- 4
@@ -522,10 +576,9 @@ def build_report() -> Builder:
     )
     b.heading("4.3 Embalagem e análise de modos de falha", 2)
     b.para(
-        "As seis tarefas de embalagem do Capítulo 8 resultam em: envio por correio em envelope "
-        "rígido (distribuição); marcação de lote, material, limites de uso e garantia (formas e marcações); a "
-        "borda como elemento crítico; berço interno que impede o contato com outros produtos (adaptação); caixa "
-        "externa identificada (projeto); e embalagem em bancada, com conferência do lote (processo)."
+        "A embalagem segue as seis tarefas do Capítulo 8: envelope rígido para o correio, marcação de lote e "
+        "limites de uso, berço interno que protege a borda, caixa externa identificada e conferência do lote "
+        "em bancada."
     )
     b.table(
         "Análise de modos e efeitos de falha (FMEA), pontuações hipotéticas",
@@ -554,12 +607,9 @@ def build_report() -> Builder:
         "elaboração própria.",
     )
     b.para(
-        "O fluxo é: pedido, confirmação de pagamento, separação, inspeção final, embalagem, postagem, rastreio e "
-        "confirmação de entrega. O piloto usa lote pequeno antes do lote de 2.000 unidades. O envio é pelos "
-        "Correios, a partir da base do grupo; um centro de distribuição próprio não se justifica nesse volume."
+        "O fluxo vai do pedido à confirmação de entrega, com envio pelos Correios a partir da base do grupo; um "
+        "centro de distribuição próprio não se justifica nesse volume."
     )
-    b.figure("fig_lancamento.png", "Os quatro processos de apoio começam antes da fase de lançamento.", width_cm=10.0,
-             source="elaboração própria.")
     b.heading("5.2 Atendimento ao cliente e assistência", 2)
     b.table(
         "Processos de atendimento, responsáveis e níveis de serviço propostos",
@@ -574,14 +624,15 @@ def build_report() -> Builder:
         "revisáveis após o piloto.",
     )
     b.para(
-        "Cada ocorrência é registrada em uma base única de clientes, com pedido, lote, motivo, evidência, "
-        "decisão e prazo; casos de borda, delaminação ou falha funcional retornam ao projeto como pedido de "
-        "mudança de engenharia. A garantia legal é de 90 dias para vício aparente em produto "
-        "durável [7, art. 26]; o grupo propõe garantia contratual de 12 meses contra defeito de fabricação, a "
-        "confirmar. O produto não tem peças substituíveis: a assistência é troca ou reembolso. O custo da fase é "
-        f"de {brl(cost_by_id.loc['A8', 'activity_cost_brl'], 0)} (atividade A8), com {brl(cost_by_id.loc['A8', 'inputs_brl'], 0)} "
-        "em insumos e material de divulgação e o restante em mão de obra de marketing."
+        "Cada ocorrência é registrada em uma base única (pedido, lote, motivo, evidência, decisão e prazo); borda, "
+        "delaminação ou falha funcional retornam ao projeto como mudança de engenharia. A garantia legal é de 90 "
+        "dias [7, art. 26]; propõe-se garantia contratual de 12 meses contra defeito de fabricação, a confirmar. "
+        "Não há peças substituíveis: a assistência é troca ou reembolso. A fase custa "
+        f"{brl(cost_by_id.loc['A8', 'activity_cost_brl'], 0)} (atividade A8)."
     )
+
+    b.figure("fig_lancamento.png", "Os quatro processos de apoio começam antes da fase de lançamento.", width_cm=10.0,
+             source="elaboração própria.")
 
     # ------------------------------------------------------------- 6
     b.heading("6. Descontinuidade do produto", 1)
@@ -621,18 +672,15 @@ def build_report() -> Builder:
     )
     b.para(
         "Benefício: o vale-desconto vence a matriz enquanto o custo pesar até "
-        f"{pct(voucher_wins_until)}; o resultado é apertado e depende de pesos da equipe. A taxa de {pct(ref)} vem "
-        "de um programa de recolhimento de outro produto, sem recompensa, que registrou cerca de 22% de devolução "
-        "apesar de 92% de intenção declarada [12]; é cenário, não previsão. Recolhimento: os Correios vencem "
-        f"enquanto o custo pesar até {pct(mail_wins_until)}; o serviço exige contrato do vendedor, quem autoriza a "
-        "postagem paga [8] e o preço contratual só sai do contrato ou do simulador [9]. Reaproveitamento: o maior volume a destinar são os retalhos de usinagem "
-        f"({br(flow_ref['machining_scrap_kg'], 1)} kg por lote, {br(flow_ref['scrap_to_returned_ratio'], 1)} vez a massa devolvida no cenário de {pct(ref)}); "
-        "eles são segregados por lote e parte serve de corpo de prova. No Brasil só se localizou uma empresa "
-        "com processo de recuperação de fibra de compósito curado, que não divulga lote mínimo nem preço [10]; "
-        "por isso o material é estocado por lote até haver destinador confirmado, e a fibra de carbono não é "
-        "apresentada como reciclável de forma automática. A reciclagem térmica retém cerca de 75% da resistência "
-        "da fibra e a química, valores próximos aos da fibra virgem; a mecânica gera fibra curta, de baixo valor [11]. "
-        "Há pesquisa brasileira em [15] e [16]."
+        f"{pct(voucher_wins_until)}, resultado apertado que depende dos pesos da equipe; a taxa de {pct(ref)} de "
+        "devolução vem de outro produto, sem recompensa, e é cenário, não previsão [12]. Recolhimento: os Correios "
+        f"vencem enquanto o custo pesar até {pct(mail_wins_until)}; o preço depende de contrato [8][9]. "
+        "Reaproveitamento: o maior volume a destinar são os retalhos de usinagem "
+        f"({br(flow_ref['machining_scrap_kg'], 1)} kg por lote, {br(flow_ref['scrap_to_returned_ratio'], 1)} vez a massa "
+        f"devolvida a {pct(ref)}), segregados por lote. Só se conhece uma empresa brasileira que recupera fibra de "
+        "compósito curado, sem divulgar lote mínimo nem preço [10]; por isso o material fica estocado até haver "
+        "destinador. A reciclagem térmica retém cerca de 75% da resistência da fibra e a química, valores próximos "
+        "aos da fibra virgem; a mecânica gera fibra curta, de baixo valor [11]; há pesquisa brasileira em [15][16]."
     )
     b.heading("6.3 Operação, encerramento e custo", 2)
     b.para(
@@ -711,6 +759,8 @@ def build_report() -> Builder:
         "[27] COCHRAN, W. G. Sampling techniques. 3. ed. Nova York: Wiley, 1977.",
         "[28] VAN WESTENDORP, P. NSS Price Sensitivity Meter (PSM): a new approach to study consumer perception of prices. In: ESOMAR Congress, 29., Veneza, 1976. p. 139-167.",
         "[29] BANCO CENTRAL DO BRASIL. Sistema Gerenciador de Séries Temporais, série 432: meta da taxa Selic. https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json. Acesso em 15 nov. 2026.",
+        "[30] EMBREY, D. E. SHERPA: a systematic human error reduction and prediction approach. In: International Topical Meeting on Advances in Nuclear Power Systems, Knoxville, 1986.",
+        "[31] REASON, J. Human error. Cambridge: Cambridge University Press, 1990.",
     ]
     for ref_text in refs:
         b.small(ref_text, 9.5, left=True)
