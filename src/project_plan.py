@@ -135,3 +135,27 @@ def critical_path() -> list[str]:
     """Activities with zero slack, in schedule order."""
     table = schedule()
     return table.loc[table["critical"], "id"].tolist()
+
+
+def sales_metrics(units: float, investment: float, unit_margin: float, months: int = 12) -> dict[str, float]:
+    """ROI, monthly IRR and payback of selling ``units`` at a constant monthly pace.
+
+    The whole investment is paid at month 0; each month brings ``units / months * unit_margin``.
+    ROI is the net gain over the period divided by the investment; payback is in months of sales
+    (it can exceed ``months``).
+    """
+    monthly = units / months * unit_margin
+    flows = [-investment] + [monthly] * months
+
+    def npv(rate: float) -> float:
+        return sum(flow / (1 + rate) ** t for t, flow in enumerate(flows))
+
+    low, high = -0.99, 10.0
+    for _ in range(200):  # bisection: npv decreases as the rate grows
+        mid = (low + high) / 2
+        low, high = (mid, high) if npv(mid) > 0 else (low, mid)
+    return {
+        "roi": (units * unit_margin - investment) / investment,
+        "irr_monthly": (low + high) / 2,
+        "payback_months": investment / monthly if monthly > 0 else float("inf"),
+    }

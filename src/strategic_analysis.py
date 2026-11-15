@@ -26,7 +26,7 @@ FIG_DIR = ROOT / "outputs" / "visualizations"
 # ----------------------------------------------------------------------- SWOT
 SWOT: dict[str, tuple[str, ...]] = {
     "FORÇAS": (
-        "Pioneirismo em forma (formato de cartão) e material (fibra de carbono)",
+        "Forma de cartão e material leve (fibra de carbono), com funções integradas e chanfro para abrir embalagens",
         "Peça única, sem peças móveis: leve, fina e discreta",
         "Conceito escolhido por critérios objetivos, com segurança como prioridade",
         "Investimento inicial baixo e estrutura enxuta",
@@ -36,12 +36,12 @@ SWOT: dict[str, tuple[str, ...]] = {
         "Resistência e segurança da borda ainda não comprovadas em ensaio",
         "Dependência de fornecedores de chapa e de usinagem terceirizada",
         "Custo de fim de vida elevado em relação à reserva do projeto",
-        "Pouca informação sobre preços da concorrência e sobre o público",
+        "Pouca informação sobre preços em reais e sobre o público",
         "Produto não remanufaturável; reciclagem ainda incerta",
     ),
     "OPORTUNIDADES": (
         "Regiões com maior população e renda concentradas no Sudeste e no Sul",
-        "Nichos EDC e ciclismo urbano sem produto equivalente em fibra de carbono",
+        "Nichos EDC e ciclismo urbano com pouca oferta de cartões em fibra de carbono",
         "Avanço do corte a frio e da fabricação sob demanda",
         "Marketplaces com tráfego já existente",
         "Logística reversa voluntária como diferencial ambiental",
@@ -68,8 +68,8 @@ PORTER: tuple[tuple[str, int, str], ...] = (
      "Canivetes, chaves sextavadas avulsas, multitools de bicicleta e estiletes executam as mesmas "
      "tarefas, muitas vezes a preço menor."),
     ("Rivalidade entre concorrentes", 3,
-     "Marcas metálicas consolidadas (Leatherman, Victorinox, Wallet Ninja), mas sem concorrente direto "
-     "em fibra de carbono no formato CR80."),
+     "Marcas metálicas consolidadas (Leatherman, Victorinox, Wallet Ninja) e um concorrente direto em "
+     "fibra de carbono no formato CR80 (Touch of Ginger), descontinuado em uma loja."),
     ("Poder de barganha dos compradores", 3,
      "Cliente final pulverizado, com baixo poder individual; porém o custo de troca é nulo e os "
      "marketplaces facilitam a comparação com o preço-base de R$ 199."),

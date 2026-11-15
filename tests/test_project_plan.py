@@ -43,3 +43,18 @@ def test_baseline_is_cumulative_and_reaches_budget() -> None:
 def test_every_activity_belongs_to_a_deliverable() -> None:
     assert {a.wbs for a in pp.ACTIVITIES} <= set(pp.DELIVERABLES)
     assert set(pp.DELIVERABLES) == {a.wbs for a in pp.ACTIVITIES}
+
+
+def test_sales_metrics_roi_irr_and_payback() -> None:
+    result = pp.sales_metrics(units=1000, investment=76_110, unit_margin=119)
+    assert result["roi"] == pytest.approx((1000 * 119 - 76_110) / 76_110)
+    assert result["payback_months"] == pytest.approx(76_110 / (1000 / 12 * 119))
+    # the IRR must zero the net present value of the cash flows
+    flows = [-76_110] + [1000 / 12 * 119] * 12
+    npv = sum(flow / (1 + result["irr_monthly"]) ** t for t, flow in enumerate(flows))
+    assert npv == pytest.approx(0, abs=1e-3)
+
+
+def test_sales_metrics_negative_when_volume_is_below_break_even() -> None:
+    result = pp.sales_metrics(units=500, investment=76_110, unit_margin=119)
+    assert result["roi"] < 0 and result["irr_monthly"] < 0 and result["payback_months"] > 12

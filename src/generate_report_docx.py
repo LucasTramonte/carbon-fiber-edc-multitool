@@ -16,13 +16,11 @@ try:
     from src import reverse_logistics_model as rl
     from src import strategic_analysis as sa
     from src.docx_builder import Builder, br, brl, load_team, pct
-    from src.regional_market_analysis import build_regional_analysis, load_state_indicators
 except ImportError:  # pragma: no cover
     import project_plan as pp
     import reverse_logistics_model as rl
     import strategic_analysis as sa
     from docx_builder import Builder, br, brl, load_team, pct
-    from regional_market_analysis import build_regional_analysis, load_state_indicators
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DOCX = ROOT / "outputs" / "relatorio_cartao_multitool.docx"
@@ -55,7 +53,6 @@ def concept_winner_range() -> tuple[float, float, bool]:
 def build_report() -> Builder:
     p = rl.load_assumptions()
     sched, costs, base = pp.schedule(), pp.cost_table(), pp.weekly_baseline()
-    regional = build_regional_analysis(load_state_indicators())
     se_s_share = rl.southeast_south_population_share()
     ref, low, mid, high = (p["return_rate_ref"], p["return_rate_low"], p["return_rate_mid"], p["return_rate_high"])
     margin = p["net_price_brl"] - p["variable_cost_brl"]
@@ -120,36 +117,52 @@ def build_report() -> Builder:
         [
             ["Missão", "Oferecer uma ferramenta plana, leve e discreta para pequenos imprevistos cotidianos, "
              "com desempenho comprovado por ensaio.", "Proposta"],
-            ["Segmentação", "Usuários EDC e ciclistas urbanos; Sudeste e Sul concentram "
-             f"{pct(se_s_share, 1)} da população e renda per capita de R$ 2.377 a R$ 2.488 [1][2].", "Derivada"],
-            ["Tendências tecnológicas", "Corte a frio de compósitos (jato d'água abrasivo ou usinagem CNC) e "
-             "fabricação sob demanda; concorrentes metálicos já consolidados.", "A validar"],
-            ["Posicionamento", "Pioneiro em forma (CR80) e material, competindo por diferenciação e não por custo.",
-             "Proposta"],
-            ["Metas", f"Recuperar o investimento de {brl(pp.BUDGET, 0)}: {be(54000, 199)} unidades ao preço-base "
-             f"({be(60000, 199)} com a reserva); sem meta de participação de mercado antes da pesquisa primária.",
-             "Derivada"],
+            ["Segmentação", "Ciclistas urbanos e usuários EDC. Entre 11.956 ciclistas de 18 cidades, 26% são "
+             "mulheres, 59% têm até 39 anos e 54% ganham até 2 salários mínimos; só 36% ganham mais de 2 [4]. "
+             "O alvo inicial são os de renda acima de 2 salários mínimos.", "Derivada"],
+            ["Tendências tecnológicas", "Corte de compósitos por fresagem CNC, jato d'água abrasivo ou laser, "
+             "este com zona afetada pelo calor [21]; cartões multiferramenta patenteados desde 1993, nenhum em "
+             "fibra de carbono (Seção 1.2).", "Observada"],
+            ["Posicionamento", "Seguidor diferenciado: já existe um cartão de fibra de carbono com chaves "
+             "sextavadas (Tabela 2). Compete por borda segura comprovada em ensaio, abertura de embalagens e "
+             "serviço de recolhimento, e não por custo.", "Proposta"],
+            ["Metas", f"ROI, TIR e participação de mercado (Tabela 5): vender 2.000 cartões em 12 meses; "
+             f"equilíbrio em {be(54000, 199)} unidades. Sem meta de participação: não há dado público do "
+             "tamanho do mercado.", "Derivada"],
             ["Competências", "Projeto em CAD, inspeção dimensional, atendimento e venda digital; usinagem "
              "terceirizada.", "Proposta"],
             ["Recursos necessários", f"Orçamento de {brl(pp.BUDGET, 0)} mais reserva de {brl(pp.RESERVE, 0)}; "
              "equipe de três discentes; chapa curada; bancada de ensaio.", "Observada"],
         ],
         [3.2, 10.3, 2.5],
-        "elaboração própria a partir de [1] e [2].",
+        "elaboração própria a partir de [4] e [21].",
     )
-    b.heading("1.2 Inovação do produto", 2)
+    b.heading("1.2 Inovação e tecnologia", 2)
     b.para(
-        "A inovação proposta é de forma e de material: uma ferramenta de peça única, no formato de cartão de "
-        "crédito, em fibra de carbono, com funções integradas (chave sextavada, abertura de embalagem por "
-        "chanfro rombo e escala) e sem peças móveis. Frente às ferramentas metálicas de carteira, o ganho "
-        "esperado é massa e volume menores com aparência diferenciada. É uma hipótese: resistência, segurança "
-        "das bordas e custo ainda dependem dos ensaios da atividade A6."
+        "A inovação é incremental, e não pioneira. Cartões multiferramenta existem desde a patente US 5.328.026, "
+        "de 1993 [23]; há cartões metálicos, como a Wallet Ninja [19], e um cartão de peça única em fibra de "
+        "carbono com sete chaves sextavadas de 6 a 12 mm e régua, o Touch of Ginger TOG09, com 1,5 mm de "
+        "espessura [22]. O cartão proposto se diferencia por chanfro rombo para abrir embalagens, escala e lote "
+        "gravados, borda segura comprovada em ensaio, serviço pós-venda e recolhimento no fim de vida. Menor "
+        "massa e espessura que os metálicos é hipótese não medida: depende dos ensaios da atividade A6."
+    )
+    b.para(
+        "O cartão é cortado a frio em chapa curada. A fresagem CNC usa avanço de 1.000 a 1.500 mm/min em chapa "
+        "de 2 mm [17]; o jato d'água abrasivo é alternativa; o laser deixa zona afetada pelo calor, delaminação "
+        "e extração de fibras [21]. Na busca de patentes, a US 5.328.026 (cartão com ferramentas) e a "
+        "US 8.713.735 (ferramenta com chaves sextavadas) expiraram [23][25]; já o desenho industrial CA 175697S "
+        "da Nite Ize, de cartão multiferramenta, está ativo até 2028 [24]. Nenhum dos três cita fibra de "
+        "carbono. A busca foi preliminar: antes do lançamento é preciso consultar o INPI e obter parecer "
+        "jurídico, porque o desenho do cartão não deve reproduzir o protegido."
     )
     b.heading("1.3 Concorrentes", 2)
     b.table(
         "Concorrentes de referência",
         ["Concorrente", "Categoria", "Garantia declarada", "Preço, material e dimensões"],
         [
+            ["Touch of Ginger TOG09", "Cartão de carteira, fibra de carbono", "Sem informação pública",
+             "US$ 14,95 a 19,99 em uma loja, descontinuado em outra; peça única; 85,7 × 54,0 mm; 1,5 mm; "
+             "23 a 28 g; 7 chaves de 6 a 12 mm e régua [22]"],
             ["Wallet Ninja", "Multitool de carteira, metálico", "Sem informação pública",
              "US$ 20; aço inoxidável; 85,6 × 54,0 mm; 28 g; 19 funções [19]"],
             ["Victorinox", "Canivete multiuso (linha SwissCard)", "2 anos, reparo ou troca, nas categorias listadas [14]",
@@ -162,31 +175,51 @@ def build_report() -> Builder:
         "na página). Faltam preços em reais e o preço oficial da SwissCard.",
     )
     b.para(
-        "Os concorrentes custam muito menos que o preço-base de R$ 199 (a Wallet Ninja, de mesmo formato, "
-        "US$ 20): o cartão só se sustenta por diferenciação de material, massa e acabamento, o que o experimento "
-        "de preço da Seção 1.4 deve testar."
+        "Os concorrentes custam de US$ 15 a 50, muito menos que R$ 199, e o TOG09 já oferece fibra de carbono "
+        "e chaves sextavadas por menos de US$ 20: o cartão só se sustenta por diferenciação comprovada, o que o "
+        "experimento de preço (Seção 1.4) deve testar."
     )
-    b.heading("1.4 Mercado e pesquisa primária", 2)
-    reg_names = {"North": "Norte", "Northeast": "Nordeste", "Southeast": "Sudeste", "South": "Sul",
-                 "Central-West": "Centro-Oeste"}
+    b.heading("1.4 Mercado e coleta de informações", 2)
+    b.para(
+        "A Tabela 3 organiza as fontes pela tipologia do Capítulo 4."
+    )
     b.table(
-        "Indicadores territoriais, 2024",
-        ["Região", "População", "Participação", "Renda per capita (R$)"],
-        [[reg_names[r.region], br(r.population_2024), f"{br(r.population_share_percent, 1)}%",
-          br(r.weighted_mean_income_brl, 2)] for r in regional.itertuples()],
-        [4.0, 3.5, 3.5, 5.0],
-        "elaboração própria com IBGE/SIDRA, tabelas 6579 e 7531, 2024 [1][2]. A renda regional é a média "
-        "ponderada pela população das UFs. São indicadores territoriais, não demanda por multitools.",
-        right_cols=(1, 2, 3),
+        "Fontes de informação de mercado e de tecnologia (tipologia do Capítulo 4)",
+        ["Tipo de fonte", "Fonte", "Situação e o que mostra"],
+        [["Secundária, dados publicados", "IBGE/SIDRA [1][2] e Cetic.br [3], 2024",
+          f"Coletada: Sudeste e Sul concentram {pct(se_s_share, 1)} da população, com renda per capita de "
+          "R$ 2.377 a R$ 2.488 (indicador territorial); entre os compradores online, 80% (Norte) a 92% "
+          "(Sudeste) usaram sites de compra e venda."],
+         ["Secundária, dados publicados", "Perfil do Ciclista 2024, Transporte Ativo [4]",
+          "Coletada: perfil do público, resumido abaixo."],
+         ["Secundária, dados padronizados", "Relatórios setoriais de mercado [26]",
+          "Sem dado público do mercado de multitools de bolso; só de multiferramentas industriais."],
+         ["Secundária, registros internos", "Assistência, devoluções e defeitos",
+          "Inexistente: o produto ainda não foi vendido; os registros nascem no piloto (Seção 5.2)."],
+         ["Tecnológica", "Patentes e produtos concorrentes [22] a [25]",
+          "Coletada: três documentos e um concorrente direto (Seção 1.2)."],
+         ["Primária, qualitativa", "20 a 30 entrevistas individuais", "Planejada na atividade A1."],
+         ["Primária, quantitativa", "Enquete com 100 a 150 respostas, cotas por região",
+          "Planejada: margem de erro de 8 a 10 pontos percentuais [27]."],
+         ["Primária, experimento", "Teste de uso observado (10 a 15) e experimento de preço [28]",
+          "Planejado na atividade A6."]],
+        [3.6, 5.2, 7.2],
+        "elaboração própria, com a tipologia de fontes do Capítulo 4.",
+        font=9,
     )
     b.para(
-        "Os dados secundários (IBGE e Cetic.br [1][2][3]) não caracterizam o público do produto. A Pesquisa Nacional Perfil do Ciclista 2024 "
-        "(11.956 entrevistas nas cidades pesquisadas) contextualiza hábitos, mas não é convertida em tamanho de "
-        "mercado [4]. Seguindo a orientação de perguntar sobre "
-        "hábitos e locais de uso, e não sobre o tamanho desejado, o plano de pesquisa primária "
-        "tem quatro etapas: triagem por entrevistas (20 a 30), teste de conceito com cotas por região (100 a "
-        "150 respostas), teste de uso observado (10 a 15) e experimento de preço. Nenhuma delas autoriza "
-        "estimar o mercado nacional; servem para validar hipóteses."
+        "Perfil do público. A pesquisa [4] cobre 11.956 ciclistas de 18 cidades, e não o país inteiro. Entre eles, "
+        "74% pedalam para o trabalho e 34% todos os dias; o trajeto mais frequente leva de 15 a 30 minutos (54%) "
+        "e a principal motivação é a praticidade (42%), seguida de saúde (26%) e custo (21%). Dois pontos "
+        "orientam o produto: o uso é diário e utilitário, ou seja, a ferramenta iria para a rua; e a renda é "
+        "baixa (54% ganham até 2 salários mínimos), o que torna o preço de R$ 199 um obstáculo para a maioria e "
+        "justifica mirar o terço de maior renda."
+    )
+    b.para(
+        "Como recomenda o Capítulo 4, as perguntas tratam de hábitos e locais de uso, e não do tamanho desejado. "
+        "Com 100 a 150 respostas, a margem de erro é de 8 a 10 pontos percentuais com 95% de confiança, pela "
+        "fórmula de Cochran para proporções [27]. O experimento de preço usa as quatro perguntas de Van "
+        "Westendorp [28]. Nenhuma etapa estima o mercado nacional: servem para validar hipóteses."
     )
     b.heading("1.5 Economia preliminar", 2)
     b.table(
@@ -201,22 +234,43 @@ def build_report() -> Builder:
         right_cols=(1, 2, 3, 4),
     )
     b.para(
-        "No piloto, o funil de indicadores deve registrar visitas, carrinhos, compras, conversão, ticket médio, "
-        "margem de contribuição, custo de aquisição, devoluções e defeitos por lote, com os eventos de "
-        "comércio eletrônico configurados antes de comparar canais."
+        "As metas seguem o roteiro do Capítulo 4: retorno do investimento (ROI), taxa interna de retorno (TIR) e "
+        "participação de mercado."
+    )
+    invest = pp.BUDGET + eol_project + eol_opex
+    goal_rows = []
+    for units in (600, 1000, 2000):
+        m = pp.sales_metrics(units, invest, margin)
+        recovery = f"{br(m['payback_months'], 1)} meses" + (" (acima de 12)" if m["payback_months"] > 12 else "")
+        goal_rows.append([br(units), pct(m["roi"], 0), pct(m["irr_monthly"], 1), recovery])
+    b.table(
+        "Metas de retorno por volume vendido em 12 meses (preço líquido R$ 199, custo variável R$ 80)",
+        ["Cartões vendidos", "ROI", "TIR mensal", "Recuperação do investimento"],
+        goal_rows,
+        [3.6, 3.0, 3.4, 6.0],
+        f"elaboração própria. Investimento de {brl(invest, 0)}: {brl(pp.BUDGET, 0)} de desenvolvimento mais "
+        f"{brl(eol_project + eol_opex, 0)} do fim de vida (Tabela 20), pagos no início; vendas em ritmo "
+        "constante. São metas de planejamento, não previsões.",
+        right_cols=(0, 1, 2, 3),
+    )
+    b.para(
+        "A participação de mercado fica sem meta: não há dado público do tamanho do mercado de multitools de bolso "
+        "no Brasil, e os relatórios gratuitos tratam de multiferramentas industriais (US$ 1,9 bilhão no mundo em "
+        "2024) [26]. A participação será medida depois do piloto de 2.000 cartões."
     )
 
     b.heading("1.6 Análise do ambiente: SWOT e cinco forças de Porter", 2)
     b.para(
-        "A matriz SWOT cruza fatores internos (forças e fraquezas) e externos (oportunidades e ameaças); as "
-        "cinco forças de Porter medem a pressão competitiva do setor. Classificações e notas são julgamento da "
-        "equipe, a revisar após a pesquisa primária e os ensaios da atividade A6."
+        "A matriz SWOT cruza fatores internos e externos; as cinco forças de Porter medem a pressão competitiva "
+        "do setor. Classificações e notas são julgamento da equipe, a revisar após a pesquisa primária e os "
+        "ensaios (A6)."
     )
     b.figure("fig_swot.png", "Matriz SWOT do cartão multitool em fibra de carbono.", width_cm=11.5,
              source="elaboração própria.")
     b.para(
-        "A principal força, o pioneirismo em forma e material, é também o ponto mais exposto: a arquitetura "
-        "simples e a usinagem terceirizável facilitam a imitação."
+        "A principal força, a combinação de forma e material, é também o ponto mais exposto: a arquitetura "
+        "simples e a usinagem terceirizável facilitam a imitação, e já existe um cartão de fibra de carbono com "
+        "chaves sextavadas (Tabela 2)."
     )
     mean_force = sa.porter_mean()
     b.table(
@@ -228,10 +282,8 @@ def build_report() -> Builder:
         "elaboração própria; notas por julgamento da equipe.",
         bold_rows=(5,), right_cols=(1,),
     )
-    b.figure("fig_porter.png", "Intensidade das cinco forças competitivas (escala de 1 a 5).", width_cm=11.5,
-             source="elaboração própria a partir da Tabela 5.")
     b.para(
-        f"A média de {br(mean_force, 1)} indica pressão competitiva {sa.porter_level(mean_force)}. As três forças "
+        f"A média de {br(mean_force, 1)} (Figura A.1) indica pressão competitiva {sa.porter_level(mean_force)}. As três forças "
         "mais intensas (novos entrantes, fornecedores e substitutos) mostram que o produto não deve competir por "
         "preço: a defesa está na diferenciação comprovada por ensaio, na construção de marca no nicho EDC e "
         "ciclista e na negociação com mais de um fornecedor de chapa e de usinagem, coerente com o "
@@ -241,7 +293,7 @@ def build_report() -> Builder:
     # ------------------------------------------------------------- 2
     b.heading("2. Planejamento do projeto", 1)
     b.heading("2.1 Termo de abertura (Project Charter)", 2)
-    b.para("A Tabela 6 segue os campos do modelo do Capítulo 5.")
+    b.para("A Tabela 7 segue os campos do modelo do Capítulo 5.")
     b.table(
         "Termo de abertura do projeto",
         ["Campo", "Conteúdo"],
@@ -256,7 +308,7 @@ def build_report() -> Builder:
              f"{brl(pp.RESERVE, 0)} (limite de {brl(pp.BUDGET + pp.RESERVE, 0)}, definido pelo grupo)."],
             ["Escopo do produto", "Cartão CR80 (85,60 × 53,98 mm), espessura de até 2 mm, peça única de fibra "
              "de carbono, com recorte sextavado, chanfro, escala e gravação de lote."],
-            ["Escopo do projeto", "Entregas 1.0 a 7.0 da Figura 3. Fora do escopo: certificação de segurança ou "
+            ["Escopo do projeto", "Entregas 1.0 a 7.0 da Figura 2. Fora do escopo: certificação de segurança ou "
              "de transporte aéreo e produção em escala."],
             ["Premissas", "Chapa curada disponível; corte por jato d'água ou CNC; venda inicial digital."],
             ["Restrições", "Segurança das bordas, custo, espessura de carteira, capacidade de usinagem."],
@@ -274,10 +326,10 @@ def build_report() -> Builder:
              width_cm=12.5, source="elaboração própria.")
     b.heading("2.3 Atividades, precedências e custos", 2)
     b.para(
-        "A Tabela 7 reproduz o formato da planilha do professor (ID, atividade, início, duração, término, "
+        "A Tabela 8 reproduz o formato da planilha do professor (ID, atividade, início, duração, término, "
         "precedência) acrescido dos custos por tipo de recurso. Prazos estão em semanas do projeto, e não "
         "em dias corridos. Os totais por atividade são as estimativas originais do grupo; a divisão por tipo é "
-        "premissa até haver cotações (Tabela 8)."
+        "premissa até haver cotações (Tabela 9)."
     )
     cost_by_id = costs.set_index("id")
     rows: list[list[str]] = []
@@ -325,13 +377,12 @@ def build_report() -> Builder:
     )
     b.heading("2.4 Cronograma, caminho crítico e linha de base", 2)
     b.figure("fig_gantt_curva_s.png", "Curva S de custo acumulado e Gantt do projeto, em semanas.", width_cm=13.0,
-             source="elaboração própria a partir da Tabela 7.")
+             source="elaboração própria a partir da Tabela 8.")
     b.para(
         f"O caminho crítico é {critical}, com {int(sched['end_week'].max())} semanas; a atividade A4 tem folga de "
         f"uma semana. A curva S concentra {pct(s4)} do orçamento até a semana 4, porque A4 (chapa, "
         f"{brl(cost_by_id.loc['A4', 'inputs_brl'], 0)} em insumos) é a maior compra. O desvio de prazo e de custo "
-        "será medido por SPI e CPI (valor agregado), com a linha de base acima. As rotinas de venda e de "
-        "atendimento da Seção 5 são desenvolvidas dentro de A7 e A8, antes do lançamento."
+        "será medido por SPI e CPI (valor agregado), com a linha de base acima."
     )
 
     # ------------------------------------------------------------- 3
@@ -403,8 +454,6 @@ def build_report() -> Builder:
     # ------------------------------------------------------------- 4
     b.heading("4. Projeto detalhado", 1)
     b.heading("4.1 Subconjuntos e itens a fabricar ou comprar", 2)
-    b.figure("fig_estrutura.png", "Estrutura do produto em três subsistemas; itens fabricados em vermelho e comprados em preto.",
-             width_cm=8.5, source="elaboração própria.")
     b.table(
         "Lista de materiais e decisão de fazer ou comprar",
         ["Código", "Item", "Qtd.", "Material", "Decisão", "Critério"],
@@ -422,6 +471,8 @@ def build_report() -> Builder:
         "a decisão considera custo, prazo, capacidade e competência.",
         font=9,
     )
+    b.figure("fig_estrutura.png", "Estrutura do produto em três subsistemas; itens fabricados em vermelho e comprados em preto.",
+             width_cm=8.5, source="elaboração própria.")
     b.heading("4.2 Plano macro do processo produtivo", 2)
     b.table(
         "Plano macro do processo (sequência, posto, descrição e controle)",
@@ -514,8 +565,6 @@ def build_report() -> Builder:
     # ------------------------------------------------------------- 6
     b.heading("6. Descontinuidade do produto", 1)
     b.heading("6.1 Fim de vida e logística reversa", 2)
-    b.figure("fig_ciclo_vida.png", "Posição da descontinuidade no ciclo de vida: cada cliente devolve o cartão em "
-             "um momento diferente.", width_cm=12.5, source="elaboração própria; esquemático, sem escala.")
     b.para(
         "A fase começa na primeira devolução e termina quando o suporte acaba. Três retornos físicos têm "
         "destinos distintos (Apêndice A): arrependimento em 7 dias [7, art. 49], com reinspeção e retorno ao "
@@ -526,6 +575,8 @@ def build_report() -> Builder:
         "informar como evitar e eliminar o resíduo (arts. 30 e 31) [5]. Essa leitura deve ser confirmada por "
         "parecer jurídico."
     )
+    b.figure("fig_ciclo_vida.png", "Posição da descontinuidade no ciclo de vida: cada cliente devolve o cartão em "
+             "um momento diferente.", width_cm=12.5, source="elaboração própria; esquemático, sem escala.")
     b.heading("6.2 Decisões de recolhimento e remanufatura", 2)
     b.table(
         "Decisões da logística reversa",
@@ -566,8 +617,8 @@ def build_report() -> Builder:
     b.para(
         f"O recolhimento é considerado encerrado quando forem recebidas {pct(mid)} das unidades vendidas "
         f"({br(p['lot_units'] * mid)} cartões do lote de {br(p['lot_units'])}) ou {br(p['horizon_months'])} meses "
-        "após o fim das vendas, o que ocorrer primeiro, com revisão aos 12 meses. A Figura 10 "
-        "e a Tabela 19 mostram dependências, prazos e custos."
+        "após o fim das vendas, o que ocorrer primeiro, com revisão aos 12 meses. A Figura 9 "
+        "e a Tabela 20 mostram dependências, prazos e custos."
     )
     b.figure("reverse_flow_fase.png", "Dependência entre as atividades da fase de descontinuidade.", width_cm=15.0,
              source="elaboração própria.")
@@ -594,8 +645,8 @@ def build_report() -> Builder:
     b.heading("7. Conclusão", 1)
     b.para(
         f"O projeto custa {brl(pp.BUDGET, 0)} mais reserva de {brl(pp.RESERVE, 0)}, em "
-        f"{int(sched['end_week'].max())} semanas e nove atividades. O conceito B (chanfro, escala gravada e "
-        f"hexágonos no contorno) obteve a maior nota, {br(scores['B'], 2)}, e vence com o peso da segurança entre "
+        f"{int(sched['end_week'].max())} semanas e nove atividades. O conceito B obteve a maior nota, "
+        f"{br(scores['B'], 2)}, e vence com o peso da segurança entre "
         f"{pct(lo_w)} e {pct(hi_w)}. O investimento se recupera com {be(54000, 199)} unidades a R$ 199, mas os "
         f"concorrentes custam bem menos e a pressão competitiva é {sa.porter_level(sa.porter_mean())} (nota "
         f"{br(sa.porter_mean(), 1)} de 5); a viabilidade depende de o mercado pagar pela diferenciação, o que só a "
@@ -629,12 +680,22 @@ def build_report() -> Builder:
         "[18] CNC-STEP. Milling, drilling and cutting carbon fiber sheets. https://www.cnc-step.com/milling-drilling-cutting-carbon-fiber-sheets/. Acesso em 11 nov. 2026.",
         "[19] WALLET NINJA. Página oficial do produto. https://walletninja.com/. Acesso em 11 nov. 2026.",
         "[20] LEATHERMAN. Micra. https://www.leatherman.com/collections/bestsellers/products/micra. Acesso em 11 nov. 2026.",
+        "[21] MICROMACHINES. A review of research progress on machining carbon fiber-reinforced composites with lasers. v. 14, n. 1, art. 24, 2023. https://www.mdpi.com/2072-666X/14/1/24. Acesso em 15 nov. 2026.",
+        "[22] OSO GRANDE KNIVES. Touch of Ginger Carbon Fiber Credit Card Spanner Tool (TOG09). https://www.osograndeknives.com/catalog/credit-card-sized-tools/touch-of-ginger-carbon-fiber-credit-card-spanner-tool-knife-wrench-wallet-size-3.375x2.125-tog09-31316.html. Acesso em 15 nov. 2026.",
+        "[23] NEWMAN, C. M. Flat multiple tool holder. US 5.328.026, depositada em 11 jun. 1993. https://patents.google.com/patent/US5328026. Acesso em 15 nov. 2026.",
+        "[24] NITE IZE. Card-shaped multi-tool (desenho industrial). CA 175697, depositado em 29 jun. 2017. https://patents.google.com/patent/CA175697S/en. Acesso em 15 nov. 2026.",
+        "[25] PELTON, R. Y. Compact survival tool. US 8.713.735, depositada em 6 dez. 2011. https://patents.google.com/patent/US8713735. Acesso em 15 nov. 2026.",
+        "[26] GRAND VIEW RESEARCH. Multi-tool systems market report. https://www.grandviewresearch.com/industry-analysis/multi-tool-systems-market-report. Acesso em 15 nov. 2026.",
+        "[27] COCHRAN, W. G. Sampling techniques. 3. ed. Nova York: Wiley, 1977.",
+        "[28] VAN WESTENDORP, P. NSS Price Sensitivity Meter (PSM): a new approach to study consumer perception of prices. In: ESOMAR Congress, 29., Veneza, 1976. p. 139-167.",
     ]
     for ref_text in refs:
         b.small(ref_text, 9.5, left=True)
 
     # ------------------------------------------------------------- apêndices
-    b.appendix("A", "Detalhamento da Seção 6")
+    b.appendix("A", "Detalhamento das Seções 1.6 e 6")
+    b.figure("fig_porter.png", "Intensidade das cinco forças competitivas (escala de 1 a 5).", width_cm=11.5,
+             source="elaboração própria a partir da Tabela 6.")
     brows = [[labels_pt[r.option], brl(r.cost_per_return_brl), br(r.custo, 2), br(r.estimulo), br(r.simplicidade),
               br(r.mensagem), br(r.recompra), br(r.weighted_score, 2)]
              for r in benefit.itertuples() for labels_pt in [{
