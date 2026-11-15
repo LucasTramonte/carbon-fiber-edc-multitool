@@ -137,25 +137,64 @@ def critical_path() -> list[str]:
     return table.loc[table["critical"], "id"].tolist()
 
 
-def sales_metrics(units: float, investment: float, unit_margin: float, months: int = 12) -> dict[str, float]:
-    """ROI, monthly IRR and payback of selling ``units`` at a constant monthly pace.
+# ---------------------------------------------------------------- economic viability (Cap. 5)
+WEEKS_PER_MONTH = 52 / 12
+SALES_WEEKS = 52  # sales are spread evenly over 12 months after the launch
+DISCOUNT_RATE = 0.1375  # Selic target, % a.a. (Banco Central do Brasil, SGS series 432): minimum attractive rate
 
-    The whole investment is paid at month 0; each month brings ``units / months * unit_margin``.
-    ROI is the net gain over the period divided by the investment; payback is in months of sales
-    (it can exceed ``months``).
+
+def cash_flows(units: float, unit_net_margin: float, sales_weeks: int = SALES_WEEKS) -> list[float]:
+    """Weekly net cash flow: development outlays (the weekly baseline), then the margin of sales.
+
+    ``unit_net_margin`` is the unit price minus variable and end-of-life costs, so the flows change
+    sign once. Flow ``i`` falls at the end of project week ``i + 1``.
     """
-    monthly = units / months * unit_margin
-    flows = [-investment] + [monthly] * months
+    outlays = [-cost for cost in weekly_baseline()["cost_brl"]]
+    return outlays + [units / sales_weeks * unit_net_margin] * sales_weeks
 
-    def npv(rate: float) -> float:
-        return sum(flow / (1 + rate) ** t for t, flow in enumerate(flows))
 
-    low, high = -0.99, 10.0
-    for _ in range(200):  # bisection: npv decreases as the rate grows
+def npv(flows: list[float], annual_rate: float = DISCOUNT_RATE) -> float:
+    """Net present value with weekly compounding equivalent to the annual rate."""
+    weekly = (1 + annual_rate) ** (1 / 52) - 1
+    return sum(flow / (1 + weekly) ** t for t, flow in enumerate(flows, start=1))
+
+
+def irr_monthly(flows: list[float]) -> float:
+    """Internal rate of return, expressed per month (bisection on the weekly rate)."""
+    low, high = -0.5, 5.0
+    for _ in range(200):  # the NPV falls as the rate rises
         mid = (low + high) / 2
-        low, high = (mid, high) if npv(mid) > 0 else (low, mid)
+        value = sum(flow / (1 + mid) ** t for t, flow in enumerate(flows, start=1))
+        low, high = (mid, high) if value > 0 else (low, mid)
+    return (1 + (low + high) / 2) ** WEEKS_PER_MONTH - 1
+
+
+def payback_months(flows: list[float]) -> float:
+    """Months from the project start until the cumulative flow turns positive (inf if never)."""
+    total = 0.0
+    for i, flow in enumerate(flows):
+        if total < 0 <= total + flow:
+            return (i + (-total) / flow) / WEEKS_PER_MONTH
+        total += flow
+    return float("inf")
+
+
+def economics(units: float, unit_net_margin: float, annual_rate: float = DISCOUNT_RATE) -> dict[str, float]:
+    """ROI over the budget, NPV, monthly IRR and payback for selling ``units`` in 12 months."""
+    flows = cash_flows(units, unit_net_margin)
     return {
-        "roi": (units * unit_margin - investment) / investment,
-        "irr_monthly": (low + high) / 2,
-        "payback_months": investment / monthly if monthly > 0 else float("inf"),
+        "roi": sum(flows) / BUDGET,
+        "npv": npv(flows, annual_rate),
+        "irr_monthly": irr_monthly(flows),
+        "payback_months": payback_months(flows),
     }
+
+
+def units_for_zero_npv(unit_net_margin: float, annual_rate: float = DISCOUNT_RATE) -> float:
+    """Units sold in 12 months at which the NPV is zero (the NPV is linear in the units)."""
+    weekly = (1 + annual_rate) ** (1 / 52) - 1
+    outlays = weekly_baseline()["cost_brl"]
+    pv_outlays = sum(cost / (1 + weekly) ** t for t, cost in enumerate(outlays, start=1))
+    start = len(outlays)
+    pv_unit = sum(unit_net_margin / SALES_WEEKS / (1 + weekly) ** (start + k) for k in range(1, SALES_WEEKS + 1))
+    return pv_outlays / pv_unit

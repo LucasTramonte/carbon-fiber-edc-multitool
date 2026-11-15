@@ -17,7 +17,7 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK, WD_LINE_SPACING, WD_TAB_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Cm, Pt
+from docx.shared import Cm, Pt, RGBColor
 
 ROOT = Path(__file__).resolve().parents[1]
 FIGURES = ROOT / "outputs" / "visualizations"
@@ -314,6 +314,58 @@ class Builder:
             self.small(f"Fonte: {source}", 9.5)
         else:
             self.small("", 4)
+
+    SWOT_STYLE = {
+        "FORÇAS": ("Forças (interno, positivo)", "E1EDFA", "1F5FAA"),
+        "FRAQUEZAS": ("Fraquezas (interno, negativo)", "FBEEE0", "A8501A"),
+        "OPORTUNIDADES": ("Oportunidades (externo, positivo)", "E3F2E4", "1B7032"),
+        "AMEAÇAS": ("Ameaças (externo, negativo)", "F9E6E6", "A02E2E"),
+    }
+
+    def swot_matrix(self, caption: str, quadrants: dict[str, tuple[str, ...]], source: str = "") -> None:
+        """SWOT as a shaded 2 x 2 table, numbered and captioned as a figure."""
+        self.fig_no += 1
+        table = self.doc.add_table(rows=2, cols=2)
+        table.style = "Table Grid"
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        table.autofit = False
+        layout = OxmlElement("w:tblLayout")
+        layout.set(qn("w:type"), "fixed")
+        table._tbl.tblPr.append(layout)
+        for column in table.columns:
+            column.width = Cm(8.0)
+        for index, name in enumerate(("FORÇAS", "FRAQUEZAS", "OPORTUNIDADES", "AMEAÇAS")):
+            label, fill, ink = self.SWOT_STYLE[name]
+            cell = table.cell(index // 2, index % 2)
+            cell.width = Cm(8.0)
+            props = cell._tc.get_or_add_tcPr()
+            shade = OxmlElement("w:shd")
+            shade.set(qn("w:val"), "clear")
+            shade.set(qn("w:fill"), fill)
+            props.append(shade)
+            head = cell.paragraphs[0]
+            head.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            head.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
+            head.paragraph_format.space_after = Pt(3)
+            run = head.add_run(label)
+            run.bold = True
+            run.font.size = Pt(10)
+            run.font.color.rgb = RGBColor.from_string(ink)
+            for item in quadrants[name]:
+                line = cell.add_paragraph()
+                line.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                line.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
+                line.paragraph_format.space_after = Pt(2)
+                line.paragraph_format.left_indent = Cm(0.4)
+                line.paragraph_format.first_line_indent = Cm(-0.4)
+                bullet = line.add_run("•\u00a0\u00a0" + item)
+                bullet.font.size = Pt(9)
+            if index % 2 == 0:
+                self._no_split(table.rows[index // 2])
+        text = f"Figura {self.prefix}{self.fig_no}: {caption}"
+        if source:
+            text += f" Fonte: {source}"
+        self.small(text, 10)
 
     @staticmethod
     def _repeat_header(row) -> None:

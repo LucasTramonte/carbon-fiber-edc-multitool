@@ -126,8 +126,8 @@ def build_report() -> Builder:
             ["Posicionamento", "Seguidor diferenciado: já existe um cartão de fibra de carbono com chaves "
              "sextavadas (Tabela 2). Compete por borda segura comprovada em ensaio, abertura de embalagens e "
              "serviço de recolhimento, e não por custo.", "Proposta"],
-            ["Metas", f"ROI, TIR e participação de mercado (Tabela 5): vender 2.000 cartões em 12 meses; "
-             f"equilíbrio em {be(54000, 199)} unidades. Sem meta de participação: não há dado público do "
+            ["Metas", f"ROI, VPL, TIR e participação de mercado (Tabela 9): vender 1.000 cartões em 12 meses; "
+             f"equilíbrio em {break_even_total} cartões. Sem meta de participação: não há dado público do "
              "tamanho do mercado.", "Derivada"],
             ["Competências", "Projeto em CAD, inspeção dimensional, atendimento e venda digital; usinagem "
              "terceirizada.", "Proposta"],
@@ -221,52 +221,13 @@ def build_report() -> Builder:
         "fórmula de Cochran para proporções [27]. O experimento de preço usa as quatro perguntas de Van "
         "Westendorp [28]. Nenhuma etapa estima o mercado nacional: servem para validar hipóteses."
     )
-    b.heading("1.5 Economia preliminar", 2)
-    b.table(
-        "Ponto de equilíbrio do orçamento de desenvolvimento (custo variável hipotético de R$ 80)",
-        ["Cenário", "Preço líquido", "Margem unitária", "Unidades (R$ 54 mil)", "Unidades (R$ 60 mil)"],
-        [[n, brl(pr, 0), brl(pr - 80, 0), br(be(54000, pr)), br(be(60000, pr))]
-         for n, pr in (("Conservador", 149), ("Base", 199), ("Premium", 249))],
-        [3.0, 3.0, 3.2, 3.4, 3.4],
-        "elaboração própria. Preço e custo variável são hipóteses a substituir por cotação, impostos, taxas "
-        "da plataforma, frete e devoluções. O ponto de equilíbrio é um requisito econômico de validação, "
-        "não uma previsão.",
-        right_cols=(1, 2, 3, 4),
-    )
-    b.para(
-        "As metas seguem o roteiro do Capítulo 4: retorno do investimento (ROI), taxa interna de retorno (TIR) e "
-        "participação de mercado."
-    )
-    invest = pp.BUDGET + eol_project + eol_opex
-    goal_rows = []
-    for units in (600, 1000, 2000):
-        m = pp.sales_metrics(units, invest, margin)
-        recovery = f"{br(m['payback_months'], 1)} meses" + (" (acima de 12)" if m["payback_months"] > 12 else "")
-        goal_rows.append([br(units), pct(m["roi"], 0), pct(m["irr_monthly"], 1), recovery])
-    b.table(
-        "Metas de retorno por volume vendido em 12 meses (preço líquido R$ 199, custo variável R$ 80)",
-        ["Cartões vendidos", "ROI", "TIR mensal", "Recuperação do investimento"],
-        goal_rows,
-        [3.6, 3.0, 3.4, 6.0],
-        f"elaboração própria. Investimento de {brl(invest, 0)}: {brl(pp.BUDGET, 0)} de desenvolvimento mais "
-        f"{brl(eol_project + eol_opex, 0)} do fim de vida (Tabela 20), pagos no início; vendas em ritmo "
-        "constante. São metas de planejamento, não previsões.",
-        right_cols=(0, 1, 2, 3),
-    )
-    b.para(
-        "A participação de mercado fica sem meta: não há dado público do tamanho do mercado de multitools de bolso "
-        "no Brasil, e os relatórios gratuitos tratam de multiferramentas industriais (US$ 1,9 bilhão no mundo em "
-        "2024) [26]. A participação será medida depois do piloto de 2.000 cartões."
-    )
-
-    b.heading("1.6 Análise do ambiente: SWOT e cinco forças de Porter", 2)
+    b.heading("1.5 Análise do ambiente: SWOT e cinco forças de Porter", 2)
     b.para(
         "A matriz SWOT cruza fatores internos e externos; as cinco forças de Porter medem a pressão competitiva "
         "do setor. Classificações e notas são julgamento da equipe, a revisar após a pesquisa primária e os "
         "ensaios (A6)."
     )
-    b.figure("fig_swot.png", "Matriz SWOT do cartão multitool em fibra de carbono.", width_cm=11.5,
-             source="elaboração própria.")
+    b.swot_matrix("Matriz SWOT do cartão multitool em fibra de carbono.", sa.SWOT, source="elaboração própria.")
     b.para(
         "A principal força, a combinação de forma e material, é também o ponto mais exposto: a arquitetura "
         "simples e a usinagem terceirizável facilitam a imitação, e já existe um cartão de fibra de carbono com "
@@ -292,8 +253,32 @@ def build_report() -> Builder:
 
     # ------------------------------------------------------------- 2
     b.heading("2. Planejamento do projeto", 1)
-    b.heading("2.1 Termo de abertura (Project Charter)", 2)
-    b.para("A Tabela 7 segue os campos do modelo do Capítulo 5.")
+    b.heading("2.1 Interessados e responsabilidades", 2)
+    b.figure("fig_organograma.png", "Organograma do projeto: funções, hierarquia e atividades de cada interessado.",
+             width_cm=14.5, source="elaboração própria.")
+    b.para(
+        "A Figura 2 mostra a hierarquia do projeto e as atividades (A1 a A9, Figura 3) de cada função. As "
+        "funções internas são exercidas pelos três discentes; o gerente é designado pelo grupo."
+    )
+    b.heading("2.2 Escopo do produto e do projeto", 2)
+    b.table(
+        "Escopo do produto: funções, parâmetros e critérios de aceitação",
+        ["Função ou parâmetro", "Especificação", "Critério de aceitação"],
+        [["Formato e espessura", "CR80, 85,60 × 53,98 mm, até 2 mm; peça única de fibra de carbono e epóxi",
+          "Medição com instrumento calibrado"],
+         ["Transmitir torque (F1 e F2)", "Recortes sextavados no contorno",
+          "Sem escorregamento nem fratura no torque definido em ensaio"],
+         ["Abrir embalagem (F3)", "Chanfro rombo contínuo", "Abre a fita sem tocar no conteúdo"],
+         ["Medir (F4)", "Escala gravada", "Legível após os ensaios de uso"],
+         ["Proteger o usuário (F5)", "Raio e chanfro na borda; inspeção por lote",
+          "Nenhuma aresta viva; fratura em modo seguro, sem projeção perigosa"],
+         ["Transporte", "Cartão na carteira, com borda protegida e lote gravado",
+          "Cabe na carteira; lote rastreável"]],
+        [4.2, 6.0, 5.8],
+        "elaboração própria; critérios do plano de validação técnica do projeto, com 5 amostras por ensaio.",
+        font=9,
+    )
+    b.para("A Tabela 6 segue os campos do modelo do Capítulo 5 para a declaração do escopo do projeto.")
     b.table(
         "Termo de abertura do projeto",
         ["Campo", "Conteúdo"],
@@ -306,13 +291,12 @@ def build_report() -> Builder:
              "afirmação de demanda."],
             ["Prazo e custo", f"{int(sched['end_week'].max())} semanas; {brl(pp.BUDGET, 0)} mais reserva de "
              f"{brl(pp.RESERVE, 0)} (limite de {brl(pp.BUDGET + pp.RESERVE, 0)}, definido pelo grupo)."],
-            ["Escopo do produto", "Cartão CR80 (85,60 × 53,98 mm), espessura de até 2 mm, peça única de fibra "
-             "de carbono, com recorte sextavado, chanfro, escala e gravação de lote."],
-            ["Escopo do projeto", "Entregas 1.0 a 7.0 da Figura 2. Fora do escopo: certificação de segurança ou "
+            ["Escopo do produto", "Funções e parâmetros da Tabela 5."],
+            ["Escopo do projeto", "Entregas 1.0 a 7.0 da Figura 3. Fora do escopo: certificação de segurança ou "
              "de transporte aéreo e produção em escala."],
             ["Premissas", "Chapa curada disponível; corte por jato d'água ou CNC; venda inicial digital."],
             ["Restrições", "Segurança das bordas, custo, espessura de carteira, capacidade de usinagem."],
-            ["Equipe", "Três discentes: projeto e ensaios; produção e qualidade; vendas e atendimento."],
+            ["Equipe", "Três discentes, com as funções da Figura 2."],
             ["Riscos", "Delaminação, baixa utilidade percebida, custo alto, atraso de fornecedor e rejeição "
              "em inspeção."],
             ["Aprovações", "Avanço de fase só com requisitos aprovados, protótipo funcional e ensaios sem "
@@ -321,15 +305,15 @@ def build_report() -> Builder:
         [3.6, 12.4],
         "elaboração própria.",
     )
-    b.heading("2.2 Estrutura analítica do projeto (EAP)", 2)
+    b.heading("2.3 Estrutura analítica do projeto (EAP)", 2)
     b.figure("fig_eap.png", "EAP em três níveis: produto do projeto, entregas e pacotes de trabalho (atividades A1 a A9).",
              width_cm=12.5, source="elaboração própria.")
-    b.heading("2.3 Atividades, precedências e custos", 2)
+    b.heading("2.4 Atividades, precedências e custos", 2)
     b.para(
-        "A Tabela 8 reproduz o formato da planilha do professor (ID, atividade, início, duração, término, "
+        "A Tabela 7 reproduz o formato da planilha do professor (ID, atividade, início, duração, término, "
         "precedência) acrescido dos custos por tipo de recurso. Prazos estão em semanas do projeto, e não "
         "em dias corridos. Os totais por atividade são as estimativas originais do grupo; a divisão por tipo é "
-        "premissa até haver cotações (Tabela 9)."
+        "premissa até haver cotações (Tabela 8)."
     )
     cost_by_id = costs.set_index("id")
     rows: list[list[str]] = []
@@ -365,24 +349,66 @@ def build_report() -> Builder:
         f"{brl(pp.BUDGET + pp.RESERVE, 0)}. Linhas em destaque somam as atividades de cada entrega.",
         font=8, bold_rows=tuple(bold), right_cols=(3, 6, 7, 8, 9),
     )
-    std_rows = [[code, name, kind, brl(rate, 0)] for code, (name, kind, rate) in pp.STANDARD_COST.items()]
+    std_rows = [[code, name, "pessoa-semana", brl(rate, 0), brl(rate / 40, 2)]
+                for code, (name, kind, rate) in pp.STANDARD_COST.items()]
     b.table(
-        "Custo padrão e legenda das siglas",
-        ["Sigla", "Especificação", "Tipo", "Custo (R$/pessoa-semana)"],
-        std_rows + [["Equip. e serviços", "Licença de CAD, bancada de ensaio e usinagem terceirizada", "Serviço", "Cotação"],
-                    ["Insumos", "Chapa curada, corpos de prova, embalagem", "Material", "Cotação"]],
-        [3.2, 7.0, 2.4, 3.4],
-        "elaboração própria. As taxas são hipóteses de planejamento e substituem-se por valores de cotação.",
-        right_cols=(3,),
+        "Custo padrão por tipo de recurso e legenda das siglas",
+        ["Sigla", "Recurso", "Unidade", "Custo", "R$/hH"],
+        std_rows + [["Equip.", "Fresagem CNC terceirizada", "R$/hM", "a cotar", "-"],
+                    ["Equip.", "Bancada de ensaio e licença de CAD", "R$/utilização", "a cotar", "-"],
+                    ["Insumos", "Chapa curada, corpos de prova e embalagem", "R$/unidade", "a cotar", "-"]],
+        [2.0, 7.2, 3.0, 2.2, 1.6],
+        "elaboração própria. hH: hora-homem, com 40 horas por semana; hM: hora-máquina. As taxas de mão de obra "
+        "são hipóteses e os demais preços dependem de cotação; a fresagem do lote de 2.000 cartões usa de 62 a "
+        "83 horas-máquina (Seção 4.2).",
+        right_cols=(3, 4),
     )
-    b.heading("2.4 Cronograma, caminho crítico e linha de base", 2)
-    b.figure("fig_gantt_curva_s.png", "Curva S de custo acumulado e Gantt do projeto, em semanas.", width_cm=13.0,
-             source="elaboração própria a partir da Tabela 8.")
+    b.heading("2.5 Cronograma, caminho crítico e linha de base", 2)
     b.para(
         f"O caminho crítico é {critical}, com {int(sched['end_week'].max())} semanas; a atividade A4 tem folga de "
         f"uma semana. A curva S concentra {pct(s4)} do orçamento até a semana 4, porque A4 (chapa, "
         f"{brl(cost_by_id.loc['A4', 'inputs_brl'], 0)} em insumos) é a maior compra. O desvio de prazo e de custo "
         "será medido por SPI e CPI (valor agregado), com a linha de base acima."
+    )
+
+    b.figure("fig_gantt_curva_s.png", "Curva S de custo acumulado e Gantt do projeto, em semanas.", width_cm=13.0,
+             source="elaboração própria a partir da Tabela 7.")
+    b.heading("2.6 Viabilidade econômica", 2)
+    unit_net = margin - eol_unit
+    zero_npv = math.ceil(pp.units_for_zero_npv(unit_net))
+    t_be = pp.payback_months(pp.cash_flows(1000, unit_net))
+    price_be = lambda price: math.ceil(pp.BUDGET / (price - p["variable_cost_brl"] - eol_unit))  # noqa: E731
+    b.para(
+        f"A análise compara o investimento de {brl(pp.BUDGET, 0)}, gasto em {int(sched['end_week'].max())} semanas, "
+        f"com a margem das vendas: {brl(margin, 0)} por cartão, ou {brl(unit_net)} depois do custo de fim de vida "
+        f"de {brl(eol_unit)} por cartão (Tabela 19). A taxa de desconto é a meta Selic, {pct(pp.DISCOUNT_RATE, 2)} "
+        f"ao ano [29]. No cenário base, de 1.000 cartões vendidos em 12 meses, o lucro acumulado iguala o "
+        f"investimento no mês {br(t_be, 1)} (Figura 5). O equilíbrio simples exige {break_even_total} cartões e o "
+        f"VPL só é positivo a partir de {zero_npv}; a R$ 149 de preço o equilíbrio sobe para {price_be(149)} cartões "
+        f"e a R$ 249 cai para {price_be(249)}."
+    )
+    econ_rows = []
+    for units in (600, 1000, 2000):
+        e = pp.economics(units, unit_net)
+        econ_rows.append([br(units), br(e["payback_months"], 1), pct(e["roi"], 0), brl(e["npv"], 0),
+                          pct(e["irr_monthly"], 1)])
+    b.table(
+        "Viabilidade econômica por volume vendido em 12 meses (preço líquido R$ 199, custo variável R$ 80)",
+        ["Cartões vendidos", "Equilíbrio (mês)", "ROI", "VPL", "TIR mensal"],
+        econ_rows,
+        [3.2, 3.2, 2.6, 3.4, 3.6],
+        f"elaboração própria. ROI: lucro líquido sobre o investimento de {brl(pp.BUDGET, 0)}. VPL a "
+        f"{pct(pp.DISCOUNT_RATE, 2)} ao ano e TIR com fluxo semanal. São metas de planejamento, não previsões.",
+        right_cols=(0, 1, 2, 3, 4),
+    )
+    b.figure("fig_viabilidade.png", "Investimento, vendas e lucro acumulados por mês no cenário base de 1.000 "
+             "cartões em 12 meses; as linhas tracejadas mostram 600 e 2.000 cartões.", width_cm=14.0,
+             source="elaboração própria; vendas em ritmo constante nos 12 meses após o lançamento.")
+    b.para(
+        "A participação de mercado fica sem meta: não há dado público do tamanho do mercado de multitools de bolso "
+        "no Brasil, e os relatórios gratuitos tratam de multiferramentas industriais (US$ 1,9 bilhão no mundo em "
+        "2024) [26]. Como o planejamento só dispõe de informações preliminares, esta análise deve ser revista a "
+        "cada ponto de decisão."
     )
 
     # ------------------------------------------------------------- 3
@@ -429,16 +455,6 @@ def build_report() -> Builder:
     b.figure("fig_croqui.png", "Croqui da arquitetura integral: uma placa de fibra de carbono com funções usinadas "
              "e gravadas.", width_cm=10.0, source="elaboração própria; ilustrativo.")
     b.table(
-        "Interfaces críticas da arquitetura",
-        ["Interface", "Requisito"],
-        [["Usuário e borda", "Chanfro rombo contínuo; nenhuma aresta viva após o acabamento"],
-         ["Ferramenta e porca", "Recorte sextavado sem escorregamento nem fratura no torque definido em ensaio"],
-         ["Cartão e carteira", "Formato CR80 e espessura de até 2 mm, com borda protegida em transporte"],
-         ["Peça e processo de corte", "Corte a frio, sem delaminação; inspeção de borda por lote"]],
-        [4.2, 11.8],
-        "elaboração própria, a partir dos critérios do plano de validação técnica do projeto.",
-    )
-    b.table(
         "Características estéticas (forma, superfície, cor, estilo e semântica)",
         ["Atributo", "Decisão", "Justificativa"],
         [["Forma", "Retângulo CR80 com cantos arredondados", "Compatível com carteira e leitor de cartão"],
@@ -454,21 +470,26 @@ def build_report() -> Builder:
     # ------------------------------------------------------------- 4
     b.heading("4. Projeto detalhado", 1)
     b.heading("4.1 Subconjuntos e itens a fabricar ou comprar", 2)
+    def when(ident: str) -> str:
+        row = sched[sched["id"] == ident].iloc[0]
+        return f"{ident}: S{row['start_week']} a S{row['end_week']}"
+
     b.table(
-        "Lista de materiais e decisão de fazer ou comprar",
-        ["Código", "Item", "Qtd.", "Material", "Decisão", "Critério"],
-        [["P1", "Chapa curada", "1/40 de chapa", "Fibra de carbono e epóxi", "Comprar", "Certificado, espessura e lote"],
-         ["P2", "Cartão recortado e usinado", "1", "Fibra de carbono", "Fazer (terceirizar a usinagem)", "Corte a frio, sem delaminação"],
-         ["P3", "Chanfro e acabamento", "1", "Fibra de carbono", "Fazer", "Segurança da borda"],
-         ["P4", "Hexágonos e recortes", "1 conjunto", "Fibra de carbono", "Fazer", "Torque em ensaio"],
-         ["P5", "Escala gravada", "1", "Fibra de carbono", "Fazer", "Legibilidade"],
-         ["P6", "Gravação de lote", "1", "Fibra de carbono", "Fazer ou terceirizar", "Rastreabilidade"],
-         ["P7", "Envelope ou berço", "1", "Papel ou plástico reciclável", "Comprar", "Protege a borda"],
-         ["P8", "Caixa externa", "1", "Papelão", "Comprar", "Identificação do lote"],
-         ["P9", "Manual e etiqueta", "1", "Papel", "Comprar", "Instruções e limites de uso"]],
-        [1.2, 3.6, 1.8, 3.2, 3.2, 3.0],
-        "elaboração própria. Custos unitários dependem das cotações da atividade A4 e do fornecedor de usinagem; "
-        "a decisão considera custo, prazo, capacidade e competência.",
+        "Lista de materiais, decisão de fazer ou comprar e plano de aquisições",
+        ["Código", "Item", "Qtd.", "Material", "Decisão", "Critério", "Aquisição"],
+        [["P1", "Chapa curada", "1/40 de chapa", "Fibra de carbono e epóxi", "Comprar", "Certificado, espessura e lote", when("A4")],
+         ["P2", "Cartão recortado e usinado", "1", "Fibra de carbono", "Fazer (terceirizar a usinagem)", "Corte a frio, sem delaminação", when("A5")],
+         ["P3", "Chanfro e acabamento", "1", "Fibra de carbono", "Fazer", "Segurança da borda", "Interno"],
+         ["P4", "Hexágonos e recortes", "1 conjunto", "Fibra de carbono", "Fazer", "Torque em ensaio", "Interno"],
+         ["P5", "Escala gravada", "1", "Fibra de carbono", "Fazer", "Legibilidade", "Interno"],
+         ["P6", "Gravação de lote", "1", "Fibra de carbono", "Fazer ou terceirizar", "Rastreabilidade", when("A7")],
+         ["P7", "Envelope ou berço", "1", "Papel ou plástico reciclável", "Comprar", "Protege a borda", when("A7")],
+         ["P8", "Caixa externa", "1", "Papelão", "Comprar", "Identificação do lote", when("A7")],
+         ["P9", "Manual e etiqueta", "1", "Papel", "Comprar", "Instruções e limites de uso", when("A7")]],
+        [1.1, 3.0, 1.8, 2.8, 2.6, 2.8, 1.9],
+        "elaboração própria. Aquisição: atividade e semanas do cronograma. Custos unitários dependem das "
+        "cotações da atividade A4 e do fornecedor de usinagem; a decisão considera custo, prazo, capacidade e "
+        "competência.",
         font=9,
     )
     b.figure("fig_estrutura.png", "Estrutura do produto em três subsistemas; itens fabricados em vermelho e comprados em preto.",
@@ -521,8 +542,6 @@ def build_report() -> Builder:
 
     # ------------------------------------------------------------- 5
     b.heading("5. Lançamento do produto", 1)
-    b.figure("fig_lancamento.png", "Os quatro processos de apoio começam antes da fase de lançamento.", width_cm=10.0,
-             source="elaboração própria.")
     b.heading("5.1 Processo de vendas e distribuição", 2)
     b.table(
         "Canais de venda avaliados",
@@ -539,6 +558,8 @@ def build_report() -> Builder:
         "confirmação de entrega. O piloto usa lote pequeno antes do lote de 2.000 unidades. O envio é pelos "
         "Correios, a partir da base do grupo; um centro de distribuição próprio não se justifica nesse volume."
     )
+    b.figure("fig_lancamento.png", "Os quatro processos de apoio começam antes da fase de lançamento.", width_cm=10.0,
+             source="elaboração própria.")
     b.heading("5.2 Atendimento ao cliente e assistência", 2)
     b.table(
         "Processos de atendimento, responsáveis e níveis de serviço propostos",
@@ -576,7 +597,7 @@ def build_report() -> Builder:
         "parecer jurídico."
     )
     b.figure("fig_ciclo_vida.png", "Posição da descontinuidade no ciclo de vida: cada cliente devolve o cartão em "
-             "um momento diferente.", width_cm=12.5, source="elaboração própria; esquemático, sem escala.")
+             "um momento diferente.", width_cm=11.0, source="elaboração própria; esquemático, sem escala.")
     b.heading("6.2 Decisões de recolhimento e remanufatura", 2)
     b.table(
         "Decisões da logística reversa",
@@ -617,8 +638,8 @@ def build_report() -> Builder:
     b.para(
         f"O recolhimento é considerado encerrado quando forem recebidas {pct(mid)} das unidades vendidas "
         f"({br(p['lot_units'] * mid)} cartões do lote de {br(p['lot_units'])}) ou {br(p['horizon_months'])} meses "
-        "após o fim das vendas, o que ocorrer primeiro, com revisão aos 12 meses. A Figura 9 "
-        "e a Tabela 20 mostram dependências, prazos e custos."
+        "após o fim das vendas, o que ocorrer primeiro, com revisão aos 12 meses. A Figura 11 "
+        "e a Tabela 19 mostram dependências, prazos e custos."
     )
     b.figure("reverse_flow_fase.png", "Dependência entre as atividades da fase de descontinuidade.", width_cm=15.0,
              source="elaboração própria.")
@@ -647,7 +668,8 @@ def build_report() -> Builder:
         f"O projeto custa {brl(pp.BUDGET, 0)} mais reserva de {brl(pp.RESERVE, 0)}, em "
         f"{int(sched['end_week'].max())} semanas e nove atividades. O conceito B obteve a maior nota, "
         f"{br(scores['B'], 2)}, e vence com o peso da segurança entre "
-        f"{pct(lo_w)} e {pct(hi_w)}. O investimento se recupera com {be(54000, 199)} unidades a R$ 199, mas os "
+        f"{pct(lo_w)} e {pct(hi_w)}. O investimento se recupera com {break_even_total} cartões a R$ 199 e o VPL, "
+        f"com a Selic como taxa de desconto, só é positivo a partir de {zero_npv}, mas os "
         f"concorrentes custam bem menos e a pressão competitiva é {sa.porter_level(sa.porter_mean())} (nota "
         f"{br(sa.porter_mean(), 1)} de 5); a viabilidade depende de o mercado pagar pela diferenciação, o que só a "
         "pesquisa primária mostra."
@@ -688,14 +710,15 @@ def build_report() -> Builder:
         "[26] GRAND VIEW RESEARCH. Multi-tool systems market report. https://www.grandviewresearch.com/industry-analysis/multi-tool-systems-market-report. Acesso em 15 nov. 2026.",
         "[27] COCHRAN, W. G. Sampling techniques. 3. ed. Nova York: Wiley, 1977.",
         "[28] VAN WESTENDORP, P. NSS Price Sensitivity Meter (PSM): a new approach to study consumer perception of prices. In: ESOMAR Congress, 29., Veneza, 1976. p. 139-167.",
+        "[29] BANCO CENTRAL DO BRASIL. Sistema Gerenciador de Séries Temporais, série 432: meta da taxa Selic. https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json. Acesso em 15 nov. 2026.",
     ]
     for ref_text in refs:
         b.small(ref_text, 9.5, left=True)
 
     # ------------------------------------------------------------- apêndices
-    b.appendix("A", "Detalhamento das Seções 1.6 e 6")
+    b.appendix("A", "Detalhamento das Seções 1.5 e 6")
     b.figure("fig_porter.png", "Intensidade das cinco forças competitivas (escala de 1 a 5).", width_cm=11.5,
-             source="elaboração própria a partir da Tabela 6.")
+             source="elaboração própria a partir da Tabela 4.")
     brows = [[labels_pt[r.option], brl(r.cost_per_return_brl), br(r.custo, 2), br(r.estimulo), br(r.simplicidade),
               br(r.mensagem), br(r.recompra), br(r.weighted_score, 2)]
              for r in benefit.itertuples() for labels_pt in [{

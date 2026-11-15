@@ -36,7 +36,7 @@ The current scope covers:
   as data, so the report text, table and figures come from one source;
 - a market and technology survey organized by the course typology of sources:
   public statistics (IBGE, Cetic.br), the national cyclist profile survey,
-  patents and competing products, with ROI and IRR goals by sales volume and a
+  patents and competing products, with ROI, NPV and IRR goals by sales volume and a
   sample-size and price-research design for the primary research still to do;
 - the complete Portuguese course report as DOCX (body under 15 pages plus
   appendices), generated from those models.
@@ -287,7 +287,7 @@ python src\strategic_analysis.py          # only the SWOT and five-forces figure
 ```
 
 The SWOT items, the five-force scores and their justifications live in
-`src/strategic_analysis.py`. The report (Section 1.6) reads them from there, and
+`src/strategic_analysis.py`. The report (Section 1.5) reads them from there, and
 the tests check the structure (four quadrants, five forces, scores from 1 to
 5), the mean used in the text, and the consistency of the cost figures quoted
 in the justifications with the project plan.
@@ -373,7 +373,7 @@ docker run --rm carbon-fiber-edc-multitool
 
 | Contribution | Where | Author |
 | --- | --- | --- |
-| SWOT matrix and Porter's five forces (source text and scores) | `src/strategic_analysis.py`, report Section 1.6 | Marco Gabriel Landivar Silva |
+| SWOT matrix and Porter's five forces (source text and scores) | `src/strategic_analysis.py`, report Section 1.5 | Marco Gabriel Landivar Silva |
 | Market analysis, project plan, reverse-logistics model, report generator | `src/`, `data/`, `docs/` | Lucas Tramonte |
 
 The original strategic-analysis document is kept locally as

@@ -46,6 +46,11 @@ def load_assumptions(path: Path = ASSUMPTIONS_PATH) -> dict[str, float]:
     return dict(zip(table["parameter"], table["value"].astype(float)))
 
 
+def end_of_life_unit_cost(p: dict) -> float:
+    """End-of-life phase cost (project plus operation) spread over the units of the lot."""
+    return float(build_schedule(p)["cost_brl"].sum() / p["lot_units"])
+
+
 def return_rates(p: dict) -> list[float]:
     """Return the four scenario return rates in ascending order."""
     return sorted(

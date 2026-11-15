@@ -136,3 +136,10 @@ def test_pipeline_writes_outputs(tmp_path: Path) -> None:
         assert (tmp_path / "tables" / name).exists()
     for name in ("reverse_flow.png", "reverse_cost_scenarios.png", "reverse_mass_flows.png"):
         assert (tmp_path / "visualizations" / name).exists()
+
+
+def test_end_of_life_unit_cost_spreads_the_phase_cost_over_the_lot() -> None:
+    p = rl.load_assumptions()
+    phase = rl.build_schedule(p)
+    assert rl.end_of_life_unit_cost(p) == pytest.approx(phase["cost_brl"].sum() / p["lot_units"])
+    assert 0 < rl.end_of_life_unit_cost(p) < p["net_price_brl"] - p["variable_cost_brl"]

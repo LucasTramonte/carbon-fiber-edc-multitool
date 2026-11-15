@@ -111,16 +111,16 @@ def swot_figure(path: Path | None = None) -> Path:
     """Draw the 2 x 2 SWOT matrix (internal/external by positive/negative)."""
     path = path or FIG_DIR / "fig_swot.png"
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig, ax = plt.subplots(figsize=(10, 7.4))
+    fig, ax = plt.subplots(figsize=(9.0, 7.2))
     ax.set_xlim(0, 100)
-    ax.set_ylim(0, 100)
+    ax.set_ylim(0, 106)
     ax.axis("off")
     for x, label in ((29, "Positivo"), (71, "Negativo")):
-        ax.text(x, 98.2, label, ha="center", va="center", fontsize=11, fontweight="bold", color="#555555")
-    for y, label in ((74, "Interno"), (25, "Externo")):
-        ax.text(3.2, y, label, ha="center", va="center", fontsize=11, fontweight="bold", color="#555555",
+        ax.text(x, 104.2, label, ha="center", va="center", fontsize=10, fontweight="bold", color="#555555")
+    for y, label in ((77, "Interno"), (27, "Externo")):
+        ax.text(3.2, y, label, ha="center", va="center", fontsize=10, fontweight="bold", color="#555555",
                 rotation=90)
-    width, height = 42.5, 45.5
+    width, height = 42.5, 49.0
     for name, items in SWOT.items():
         face, edge, (col, row) = _QUADRANTS[name]
         x0 = 8 + col * (width + 1.5)
@@ -128,14 +128,14 @@ def swot_figure(path: Path | None = None) -> Path:
         ax.add_patch(FancyBboxPatch((x0, y0), width, height, boxstyle="round,pad=0,rounding_size=1.2",
                                     facecolor=face, edgecolor="none"))
         ax.add_patch(plt.Rectangle((x0, y0 + height - 0.9), width, 0.9, facecolor=edge, edgecolor="none"))
-        ax.text(x0 + 2.4, y0 + height - 5.5, name, fontsize=13, fontweight="bold", va="center", color="#111111")
-        y = y0 + height - 10.0
+        ax.text(x0 + 2.4, y0 + height - 5.6, name, fontsize=12.5, fontweight="bold", va="center", color="#111111")
+        y = y0 + height - 10.6
         for item in items:
-            lines = textwrap.wrap(item, 42)
-            ax.text(x0 + 2.4, y, "•", fontsize=10, va="center", color=edge)
+            lines = textwrap.wrap(item, 38)
+            ax.text(x0 + 2.2, y, "•", fontsize=10.5, va="center", color=edge)
             for k, line in enumerate(lines):
-                ax.text(x0 + 4.6, y - k * 2.4, line, fontsize=9, va="center", color="#222222")
-            y -= 2.4 * len(lines) + 2.6
+                ax.text(x0 + 4.4, y - k * 2.6, line, fontsize=10, va="center", color="#222222")
+            y -= 2.6 * len(lines) + 2.2
     fig.savefig(path, dpi=200, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     return path

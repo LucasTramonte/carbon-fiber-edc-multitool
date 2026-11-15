@@ -25,9 +25,11 @@ import numpy as np  # noqa: E402
 
 try:
     from src import project_plan as pp
+    from src import reverse_logistics_model as rl
     from src.reverse_flow_diagram import render_png
 except ImportError:  # pragma: no cover
     import project_plan as pp
+    import reverse_logistics_model as rl
     from reverse_flow_diagram import render_png
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -304,12 +306,109 @@ def break_even_figure(path: Path) -> None:
     plt.close(fig)
 
 
+def org_chart_dot() -> str:
+    """Project organogram (Cap. 5): hierarchy, roles and the activities each one answers for."""
+    return f"""digraph organograma {{
+  rankdir=TB;
+  {HEAD}
+  SP [label="{_q("Patrocinador (docente)\naprova a minuta e as fases")}", fillcolor="{DARK}", fontcolor=white];
+  GP [label="{_q("Gerente do projeto (discente)\nprazo, custo e riscos")}", fillcolor="{LIGHT}"];
+  EQ [label="{_q("Equipe de projeto\nrequisitos e ensaios\nA1, A2, A6, A9")}"];
+  PJ [label="{_q("Projetista\nCAD e tolerâncias\nA3")}"];
+  CP [label="{_q("Compras\nchapa e usinagem\nA4")}"];
+  PD [label="{_q("Produção e qualidade\nprocesso e inspeção\nA7")}"];
+  MK [label="{_q("Marketing e atendimento\nvendas e recolhimento\nA8")}"];
+  subgraph cluster_ext {{
+    label="Interessados externos"; style="dashed"; color="{GREY}"; fontsize=11;
+    FO [label="{_q("Fornecedores\nchapa e usinagem\nA4, A5")}", fillcolor="#fafafa"];
+    US [label="{_q("Usuários e clientes\ntestes e compra\nA1, A6, A8")}", fillcolor="#fafafa"];
+    CR [label="{_q("Correios e reciclador\nfrete reverso e destino\nA8, A9")}", fillcolor="#fafafa"];
+  }}
+  SP -> GP;
+  GP -> EQ; GP -> PJ; GP -> CP; GP -> PD; GP -> MK;
+  EQ -> US [style=dashed]; CP -> FO [style=dashed]; MK -> CR [style=dashed];
+}}
+"""
+
+
+def viability_figure(path: Path) -> None:
+    """Investment, sales and profit by month, in the style of the course example (Cap. 5).
+
+    Base scenario: 1,000 cards sold evenly over the 12 months after the launch; the profit is the
+    margin after variable and end-of-life costs. Dashed lines show two other volumes.
+    """
+    p = rl.load_assumptions()
+    price = p["net_price_brl"]
+    unit_net = price - p["variable_cost_brl"] - rl.end_of_life_unit_cost(p)
+    base = pp.weekly_baseline()
+    wpm = pp.WEEKS_PER_MONTH
+    launch = len(base) / wpm
+    horizon = launch + pp.SALES_WEEKS / wpm
+    invest = pp.BUDGET / 1000
+    blue, green = "#1565c0", "#2e7d32"
+
+    def months_to_break_even(units: float) -> float:
+        return launch + (pp.BUDGET / (units * unit_net / pp.SALES_WEEKS)) / wpm
+
+    fig, ax = plt.subplots(figsize=(8.4, 5.4))
+    t_inv = np.array([0, *base["week"]]) / wpm
+    inv = np.array([0, *base["cumulative_brl"]]) / 1000
+    ax.plot(np.append(t_inv, horizon), np.append(inv, invest), color=RED, lw=2.6)
+    weeks = np.arange(pp.SALES_WEEKS + 1)
+    t_sales = launch + weeks / wpm
+    units = 1000
+    profit = units * unit_net * weeks / pp.SALES_WEEKS / 1000
+    ax.plot(t_sales, units * price * weeks / pp.SALES_WEEKS / 1000, color=green, lw=2.4)
+    ax.plot(t_sales, profit, color=blue, lw=2.6)
+    ax.fill_between(t_sales, invest, profit, where=profit >= invest, color=blue, alpha=0.18, hatch="||",
+                    edgecolor=blue, linewidth=0)
+    for other, label in ((600, "600 cartões"), (2000, "2.000 cartões")):
+        line = other * unit_net * weeks / pp.SALES_WEEKS / 1000
+        ax.plot(t_sales, line, color=blue, lw=1.4, ls="--", alpha=0.7)
+        ax.text(horizon + 0.15, line[-1], label, color=blue, fontsize=8.5, va="center")
+        t_other = months_to_break_even(other)
+        if t_other <= horizon:
+            ax.plot(t_other, invest, "o", color=blue, ms=4, alpha=0.7)
+    t_be = months_to_break_even(units)
+    ax.plot([t_be, t_be], [0, invest], color=DARK, ls=":", lw=1.2)
+    ax.plot(t_be, invest, "o", color=DARK, ms=7, zorder=5)
+    ax.text(t_be - 0.15, 3, f"Equilíbrio: mês {t_be:.1f}".replace(".", ","), fontsize=9.5, ha="right",
+            color=DARK, fontweight="bold")
+    ax.text(horizon + 0.15, profit[-1], "Lucro (1.000 cartões)", color=blue, fontsize=8.5, va="center",
+            fontweight="bold")
+    ax.text(horizon + 0.15, units * price / 1000, "Vendas (1.000 cartões)", color=green, fontsize=8.5,
+            va="center", fontweight="bold")
+    ax.text(0.15, invest + 6, f"Investimento: R$ {pp.BUDGET / 1000:.0f} mil".replace(".", ","),
+            color=RED, fontsize=9.5, fontweight="bold")
+    ax.text(t_be + 2.6, invest + 6, "Lucro efetivo", color=blue, fontsize=9, style="italic")
+    for y, x0, x1, text in ((-17, 0, launch, "Desenvolvimento"),
+                            (-17, launch, t_be, "Vendas até o equilíbrio"),
+                            (-34, 0, t_be, "Tempo total até o equilíbrio")):
+        ax.annotate("", xy=(x1, y), xytext=(x0, y), arrowprops={"arrowstyle": "<->", "color": DARK, "lw": 1})
+        ax.text((x0 + x1) / 2, y + 3.2, text, ha="center", fontsize=8.5, color=DARK)
+    ax.axhline(0, color="black", lw=0.8)
+    ax.axvline(launch, color=GREY, ls=":", lw=1)
+    ax.text(launch + 0.1, 225, "Lançamento", fontsize=8.5, color=GREY)
+    ax.set_xlim(0, horizon + 2.6)
+    ax.set_ylim(-45, 235)
+    ax.set_yticks([0, 50, 100, 150, 200])
+    ax.set_xticks(range(0, int(horizon) + 1, 2))
+    ax.set_xlabel("Meses desde o início do projeto")
+    ax.set_ylabel("R$ mil acumulados")
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    fig.tight_layout()
+    fig.savefig(path, dpi=180)
+    plt.close(fig)
+
+
 DOT_FIGURES = {
     "fig_eap.png": wbs_dot,
     "fig_blocos.png": block_diagram_dot,
     "fig_estrutura.png": product_structure_dot,
     "fig_lancamento.png": launch_dependency_dot,
     "fig_rede.png": network_dot,
+    "fig_organograma.png": org_chart_dot,
 }
 
 
@@ -322,6 +421,7 @@ def render_all(out_dir: Path = FIG_DIR) -> dict[str, bool]:
     card_sketch_figure(out_dir / "fig_croqui.png")
     regional_income_figure(out_dir / "fig_renda_regional.png")
     break_even_figure(out_dir / "fig_equilibrio.png")
+    viability_figure(out_dir / "fig_viabilidade.png")
     return status
 
 

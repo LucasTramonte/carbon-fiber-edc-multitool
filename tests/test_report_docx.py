@@ -34,7 +34,8 @@ def _texts(document) -> list[str]:
 def test_required_sections_and_appendices_exist(doc) -> None:
     text = "\n".join(_texts(doc))
     for heading in (
-        "1. Planejamento estratégico do produto", "1.6 Análise do ambiente: SWOT e cinco forças de Porter", "2. Planejamento do projeto", "3. Projeto conceitual",
+        "1. Planejamento estratégico do produto", "1.5 Análise do ambiente: SWOT e cinco forças de Porter",
+        "2.6 Viabilidade econômica", "2. Planejamento do projeto", "3. Projeto conceitual",
         "4. Projeto detalhado", "5. Lançamento do produto", "6. Descontinuidade do produto",
         "7. Conclusão", "Referências",
         "Apêndice A", "Apêndice B",
