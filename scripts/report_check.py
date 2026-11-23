@@ -19,7 +19,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_PDF = ROOT / "assets" / "relatorio_completo_cartao_multitool.docx.pdf"
+DEFAULT_PDF = ROOT / "outputs" / "relatorio_cartao_multitool.pdf"  # the draft built from the code
 FOOTER_Y = 790  # text below this line is the page number
 HEADER_Y = 60
 PAGE_BOTTOM = 785

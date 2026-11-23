@@ -15,7 +15,7 @@ reply in Portuguese; the report is Portuguese; README, code and commit messages 
 | --- | --- |
 | Tests | `python -m pytest -q` |
 | CI parity (required before any push) | `python scripts/ci_local.py` (Python 3.10, no Graphviz, about 20 s after the first run) |
-| Build the Portuguese report PDF (local) | `powershell scripts/build_report_pdf.ps1` (Word converts the .docx) |
+| Build the Portuguese draft PDF (local) | `powershell scripts/build_report_pdf.ps1` (Word converts the .docx; writes `outputs/relatorio_cartao_multitool.pdf`, never the final PDF) |
 | Build the English report PDF (published) | `powershell scripts/build_report_pdf.ps1 -Edition en`, then commit `docs/report/` |
 | Look at the PDF like a reader | `python scripts/report_check.py --png "Tabela 9"` then open the PNGs |
 | Redraw figures | `python src/report_diagrams.py` and `python src/strategic_analysis.py` |
@@ -49,6 +49,11 @@ saying where; after a push, check `gh run list --limit 3` and report the result,
 - Appendices only for material cited by number in the body; no duplicated tables or figures; the body is about 15
   pages. Course slides are not cited in the references; public sources are.
 - Equations are native Word equations built with `src/omml.py` and numbered with `Builder.equation`.
+- The final Portuguese PDF is `assets/relatorio_completo_cartao_multitool.docx.pdf`, finished by hand (Google Docs export
+  with the CAD figures). Never overwrite it from a script. The CAD figures (`cad_technical_drawing.png`,
+  `cad_3d_model.png` in `outputs/visualizations/`) are exports, not generated; both editions cite them via
+  `LABEL_MAP`. Word hung when exporting a PDF from or into the OneDrive folder on this machine: export a copy
+  from a scratch folder and copy the result.
 - `.docx` and `.pdf` are git-ignored on purpose, as are `assets/courses/`, `report/team.local.json`,
   `report/local_assets/` and `AGENTS.MD`. Never force-add them. The one exception is the English edition
   `docs/report/carbon-fiber-edc-multitool-report-en.pdf` (linked at the top of the README), which has no

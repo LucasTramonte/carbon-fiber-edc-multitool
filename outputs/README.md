@@ -3,7 +3,9 @@
 This directory contains generated artifacts, not primary source data.
 
 - `tables/`: derived CSV tables produced by the analysis pipeline.
-- `visualizations/`: PNG charts produced from the derived tables.
+- `visualizations/`: PNG charts produced from the derived tables, plus two CAD exports that code does not
+  generate: `cad_technical_drawing.png` and `cad_3d_model.png` (the title-block name was erased before
+  publication; the drawing's own labels are in Portuguese).
 
 Regenerate all outputs from the repository root:
 

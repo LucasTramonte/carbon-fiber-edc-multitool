@@ -14,7 +14,7 @@ description: Change the Portuguese course report (text, tables, figures, equatio
    only, references contiguous and every one cited.
 4. **Run the tests**: `python -m pytest -q`. They check structure, numbering, citations, equations, dashes, figure
    scale and cross-references.
-5. **Build the PDF**: `powershell scripts/build_report_pdf.ps1` (Portuguese, local). If the change affects the
+5. **Build the PDF**: `powershell scripts/build_report_pdf.ps1` (Portuguese draft in `outputs/`; the hand-finished final in `assets/` is never overwritten). If the change affects the
    English edition (`src/generate_report_en.py`, shared models, equations or figures), also run
    `powershell scripts/build_report_pdf.ps1 -Edition en`: that PDF is committed and a test compares its text hash.
 6. **Look at it**: `python scripts/report_check.py --png "<caption of each changed table or figure>"`, then open the

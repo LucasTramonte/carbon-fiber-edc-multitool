@@ -66,11 +66,12 @@ LABEL_MAP = {
     "figures": {
         "fig_organograma.png": "org", "fig_eap.png": "eap", "fig_viabilidade.png": "viab_fig",
         "reverse_flow_fase.png": "fase_fig", "fig_porter.png": "porter_fig", "fig_estrutura.png": "estrutura",
+        "cad_technical_drawing.png": "desenho", "cad_3d_model.png": "modelo3d",
     },
     "headings": {
         "Inovação e tecnologia": "s_inov", "Mercado e coleta de informações": "s_mercado",
         "Análise do ambiente": "s_swot", "Planejamento do projeto": "s_proj", "Viabilidade econômica": "s_viab",
-        "Plano macro do processo produtivo": "s_macro", "Lançamento do produto": "s_lanc",
+        "Plano macro do processo produtivo": "s_macro", "Modelagem CAD e desenho técnico": "s_cad", "Lançamento do produto": "s_lanc",
         "Atendimento ao cliente e assistência": "s_atend", "Descontinuidade do produto": "s_desc",
     },
 }
@@ -569,7 +570,26 @@ def _build(labels: dict[str, str]) -> Builder:
     b.figure("fig_estrutura.png", "Estrutura do produto em sistemas e itens, com o plano de processo que cobre cada "
              "item; itens fabricados em vermelho e comprados em preto.", width_cm=15.0,
              source=f"elaboração própria, no formato de estrutura do produto e planos de processo; itens da {R('bom')}.")
-    b.heading("4.2 Plano macro do processo produtivo", 2)
+    b.heading("4.2 Modelagem CAD e desenho técnico", 2)
+    b.para(
+        f"A geometria do cartão foi modelada em software de desenho assistido por computador (CAD) e documentada "
+        f"em desenho técnico ({R('desenho')}) e em modelo tridimensional ({R('modelo3d')}). O contorno segue o "
+        "formato CR80: 85,60 mm de largura, com tolerância de +0,12 e -0,13 mm, e 53,80 mm de altura, com +0,20 e "
+        "-0,05 mm, faixa que contém os 53,98 mm nominais do formato. A espessura é de 2,00 mm e as tolerâncias não "
+        "cotadas são de ±0,05 mm, com raios não cotados de 0,5 mm."
+    )
+    b.figure("cad_technical_drawing.png", "Desenho técnico e detalhado com dimensões e tolerância do produto e seus "
+             "sistemas.", width_cm=15.0, source="elaboração própria, em milímetros.")
+    b.para(
+        "Os recortes sextavados formam uma sequência de entradas para chaves de M8 a M3 ao longo de 64,46 mm do "
+        "contorno (função F2). O chanfro rombo percorre uma das bordas maiores e abre embalagens sem cortar o "
+        "conteúdo (F3). A escala gravada tem marcas a cada 5 mm e numeração a cada 10 mm (F4), e a identificação "
+        "do lote é gravada na face (A7). Cotas e tolerâncias são hipóteses de projeto: serão validadas com as "
+        "medições dos protótipos (A5) e com os ensaios (A6)."
+    )
+    b.figure("cad_3d_model.png", "Modelagem 3D do produto construído por software de desenho assistido por "
+             "computador.", width_cm=7.0, source="elaboração própria.")
+    b.heading("4.3 Plano macro do processo produtivo", 2)
     b.para(
         f"A {R('estrutura')} associa cada item a um plano de processo; a {R('macro')} detalha as operações de cada "
         "plano, com o posto, o tempo e o controle."
@@ -599,7 +619,7 @@ def _build(labels: dict[str, str]) -> Builder:
         "iguais ao contorno, hipótese). O total de 2 a 2,5 min por cartão equivale a 62 a 83 horas-máquina no "
         "lote de 2.000. As etapas manuais não têm dado público e serão cronometradas no protótipo."
     )
-    b.heading("4.3 Embalagem e análise de modos de falha", 2)
+    b.heading("4.4 Embalagem e análise de modos de falha", 2)
     b.table(
         "Condições de embalagem (seis tarefas do Capítulo 8)",
         ["Tarefa", "Condição adotada", "Item"],

@@ -4,8 +4,10 @@
 
 .DESCRIPTION
   -Edition pt (default): the Portuguese course report.
-     runs src\generate_report_docx.py and saves assets\relatorio_completo_cartao_multitool.docx.pdf
-     (git-ignored on purpose: the repository keeps the code and data, this PDF stays local).
+     runs src\generate_report_docx.py and saves a DRAFT to outputs\relatorio_cartao_multitool.pdf
+     (git-ignored on purpose). The final report, with the CAD drawing and the edits made by hand, is
+     assets\relatorio_completo_cartao_multitool.docx.pdf. This script never writes to it, so a rebuild cannot
+     overwrite it; to adopt a new final version, copy the file there yourself.
   -Edition en: the English edition linked at the top of the README.
      runs src\generate_report_en.py and saves docs\report\carbon-fiber-edc-multitool-report-en.pdf, which IS
      committed. It also refreshes docs\report\report-en.sha256, the hash of the report text that a test compares
@@ -29,7 +31,7 @@ if ($Edition -eq "en") {
 } else {
     $generator = "src\generate_report_docx.py"
     $docx = Join-Path $root "outputs\relatorio_cartao_multitool.docx"
-    $pdf = Join-Path $root "assets\relatorio_completo_cartao_multitool.docx.pdf"
+    $pdf = Join-Path $root "outputs\relatorio_cartao_multitool.pdf"
 }
 & $Python (Join-Path $root $generator)
 if ($LASTEXITCODE -ne 0) { throw "report generation failed" }

@@ -43,6 +43,7 @@ LABEL_MAP = {
     },
     "figures": {
         "product_structure_en.png": "structure", "viability_chart_en.png": "viability_chart",
+        "cad_technical_drawing.png": "drawing", "cad_3d_model.png": "model_3d",
         "reverse_flow_en.png": "eol_flow", "gantt_en.png": "gantt",
     },
     "headings": {},
@@ -313,7 +314,27 @@ def _build(labels: dict[str, str]) -> Builder:
         f"Concept B scores {n2(scores['B'])}, against {n2(scores['A'])} for A and {n2(scores['C'])} for C. Varying "
         f"the weight of safety from {share(lo_w)} to {share(hi_w)}, B {'wins in every case' if b_wins else 'does not always win'}."
     )
-    b.heading("2.2 Product structure, process plans and packaging", 2)
+    b.heading("2.2 CAD model and technical drawing", 2)
+    b.para(
+        f"The card geometry is modelled in computer-aided design (CAD) software and documented in a technical "
+        f"drawing ({R('drawing')}) and a three-dimensional model ({R('model_3d')}). The outline follows the CR80 "
+        "format: 85.60 mm wide, tolerance +0.12 and -0.13 mm, and 53.80 mm high, +0.20 and -0.05 mm, a window that "
+        "contains the nominal 53.98 mm of the format. The thickness is 2.00 mm; untoleranced dimensions are "
+        "±0.05 mm and untoleranced radii are 0.5 mm."
+    )
+    b.figure("cad_technical_drawing.png", "Technical drawing with dimensions and tolerances of the product.",
+             width_cm=15.0, source="own elaboration, dimensions in millimetres. The labels are in Portuguese: "
+             "blunt chamfer, engraved scale and lot identification.")
+    b.para(
+        "The hexagonal cutouts form a sequence of sockets for M8 to M3 hardware along 64.46 mm of the outline "
+        "(function F2). A blunt chamfer runs along one long edge and opens packages without cutting the contents "
+        "(F3). The engraved scale has marks every 5 mm and numbers every 10 mm (F4), and the lot identification "
+        "is engraved on the face (A7). Dimensions and tolerances are design hypotheses: they will be validated "
+        "with prototype measurements (A5) and tests (A6)."
+    )
+    b.figure("cad_3d_model.png", "Three-dimensional model of the product built in CAD software.", width_cm=7.0,
+             source="own elaboration.")
+    b.heading("2.3 Product structure, process plans and packaging", 2)
     b.para(
         f"{R('structure')} links each item to a process plan and {R('macro')} details the operations of each plan. "
         "Cutting times come from public milling parameters for carbon-fibre sheet: a feed of 1,000 to 1,500 mm/min "
@@ -357,7 +378,7 @@ def _build(labels: dict[str, str]) -> Builder:
         "own elaboration.",
         font=9,
     )
-    b.heading("2.3 Ergonomics and human error", 2)
+    b.heading("2.4 Ergonomics and human error", 2)
     b.para(
         f"The ergonomic evaluation uses the SHERPA method {cite('sherpa')}: for each user task it lists the possible "
         f"errors (slips, lapses and mistakes {cite('reason')}), the prevention in the design and the verification. "
